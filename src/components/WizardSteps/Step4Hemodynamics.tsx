@@ -205,31 +205,70 @@ export const Step4Hemodynamics: React.FC<Step4Props> = ({ data, onChange }) => {
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
-            <div className="flex justify-between items-center">
+          <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+            <div className="flex justify-between items-center gap-2">
               <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                Стеноз симптомной артерии (NASCET %):
+                Стеноз симптомной артерии (NASCET):
               </label>
-              <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                {data.targetVesselStenosisNascet}%
-              </span>
+              <div className="flex items-center space-x-1 shrink-0">
+                <input
+                  id="nascet-stenosis-number-input"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={data.targetVesselStenosisNascet}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    onChange({ targetVesselStenosisNascet: isNaN(val) ? 0 : Math.min(100, Math.max(0, val)) });
+                  }}
+                  className="w-16 px-2 py-1 text-xs font-bold text-blue-700 dark:text-blue-300 bg-white dark:bg-slate-800 border border-blue-300 dark:border-blue-700 rounded-lg text-center focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+                <span className="text-xs font-bold text-blue-600 dark:text-blue-400">%</span>
+              </div>
             </div>
 
             <input
+              id="nascet-stenosis-slider"
               type="range"
               min={0}
               max={100}
-              step={5}
+              step={1}
               value={data.targetVesselStenosisNascet}
               onChange={(e) => onChange({ targetVesselStenosisNascet: parseInt(e.target.value) || 0 })}
               className="w-full accent-blue-600 cursor-pointer"
             />
 
-            <div className="flex justify-between text-[10px] text-slate-500 font-medium">
-              <span>0% (Норма)</span>
+            {/* Quick Presets */}
+            <div className="flex flex-wrap gap-1">
+              {[
+                { val: 0, label: '0%' },
+                { val: 30, label: '30%' },
+                { val: 50, label: '50% (LAA)' },
+                { val: 70, label: '70% (КЭЭ)' },
+                { val: 90, label: '90%' },
+                { val: 100, label: '100%' }
+              ].map((p) => (
+                <button
+                  key={p.val}
+                  type="button"
+                  onClick={() => onChange({ targetVesselStenosisNascet: p.val })}
+                  className={`text-[10px] px-1.5 py-0.5 rounded font-medium border transition ${
+                    data.targetVesselStenosisNascet === p.val
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex justify-between text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-200 dark:border-slate-700/60">
+              <span>0%</span>
               <span className="text-amber-600 font-bold">≥ 50% (LAA)</span>
               <span className="text-rose-600 font-bold">70–99% (КЭЭ)</span>
-              <span>100% (Окклюзия)</span>
+              <span>100%</span>
             </div>
 
             {data.targetVesselStenosisNascet >= 70 && data.targetVesselStenosisNascet <= 99 && (

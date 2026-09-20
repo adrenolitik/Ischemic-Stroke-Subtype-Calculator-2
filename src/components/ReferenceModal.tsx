@@ -25,7 +25,7 @@ interface ReferenceModalProps {
 }
 
 export const ReferenceModal: React.FC<ReferenceModalProps> = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'toast' | 'reperfusion' | 'doac' | 'malignant' | 'rare'>('toast');
+  const [activeTab, setActiveTab] = useState<'toast' | 'reperfusion' | 'doac' | 'malignant' | 'rare' | 'sources'>('toast');
 
   if (!isOpen) return null;
 
@@ -41,10 +41,10 @@ export const ReferenceModal: React.FC<ReferenceModalProps> = ({ isOpen, onClose 
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                Клиническое руководство (Протокол МЗ РБ № 1 от 05.01.2026)
+                Клиническое руководство и нормативная литература
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Официальные критерии TOAST 2.0, OCSP, реперфузии и вторичной профилактики
+                Протокол МЗ РБ № 1 (2026 г.) и фундаментальные руководства для врачей
               </p>
             </div>
           </div>
@@ -66,7 +66,8 @@ export const ReferenceModal: React.FC<ReferenceModalProps> = ({ isOpen, onClose 
             { id: 'reperfusion', label: 'Реперфузия (ТЛТ / ВСТЭ)' },
             { id: 'doac', label: 'ОАК & ДААТ (Таблицы)' },
             { id: 'malignant', label: 'Злокачественный инфаркт' },
-            { id: 'rare', label: 'Редкие причины (ODE)' }
+            { id: 'rare', label: 'Редкие причины (ODE)' },
+            { id: 'sources', label: 'Литература и источники' }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -286,6 +287,54 @@ export const ReferenceModal: React.FC<ReferenceModalProps> = ({ isOpen, onClose 
                     <span className="text-slate-500 text-[11px]">{r.descRu}</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: SOURCES & LITERATURE */}
+          {activeTab === 'sources' && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                <span>Нормативные документы и фундаментальные руководства</span>
+              </h3>
+
+              <div className="space-y-3 text-xs">
+                <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/40 space-y-2">
+                  <span className="inline-block px-2 py-0.5 rounded bg-blue-600 text-white text-[10px] font-bold uppercase">
+                    Национальный клинический протокол
+                  </span>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Клинический протокол «Фармакотерапия и хирургическое лечение пациентов с острыми нарушениями мозгового кровообращения»
+                  </h4>
+                  <p className="text-slate-600 dark:text-slate-300">
+                    Утвержден Постановлением Министерства здравоохранения Республики Беларусь № 1 от 05.01.2026 г. Включает приложения 1–16 (критерии кардиоэмболии, шкала NIHSS, шкала ABCD², ASPECT, протоколы ТЛТ и ВСТЭ, дозирование ПОАК, шкала HAS-BLED, хирургия декомпрессии).
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-950/40 space-y-2">
+                  <span className="inline-block px-2 py-0.5 rounded bg-purple-600 text-white text-[10px] font-bold uppercase">
+                    Практическое руководство для врачей (2024 г.)
+                  </span>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Ишемический инсульт: диагностика, лечение, реабилитация и профилактика. Руководство для врачей / О.И. Виноградов, А.А. Кулеш, Д.А. Демин. - М.: Логосфера, 2024. - 256 с.
+                  </h4>
+                  <p className="text-slate-600 dark:text-slate-300">
+                    Фундаментальное руководство, систематизирующее принципы мультимодальной нейровизуализации (КТ- и МРТ-перфузия, DWI-FLAIR mismatch), стратификацию этиологических механизмов TOAST/ASCOD, современные режимы системного тромболизиса и эндоваскулярной тромбэкстракции, а также доказательную вторичную профилактику.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-2">
+                  <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                    Международные валидированные классификации и шкалы:
+                  </span>
+                  <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-300 text-[11px]">
+                    <li><strong>TOAST:</strong> Adams HP Jr, et al. Classification of subtype of acute ischemic stroke. Definitions for use in a multicenter clinical trial. <em>Stroke</em>, 1993; 24(1): 35–41.</li>
+                    <li><strong>OCSP:</strong> Bamford J, Sandercock P, et al. Classification and natural history of clinically identifiable subtypes of cerebral infarction. <em>Lancet</em>, 1991; 337: 1521–1526.</li>
+                    <li><strong>ESUS:</strong> Hart RG, Diener HC, et al. Embolic strokes of undetermined source: the case for a new clinical construct. <em>Lancet Neurol</em>, 2014; 13(4): 429–438.</li>
+                    <li><strong>ASPECTS:</strong> Barber PA, et al. Validity and reliability of a quantitative computed tomography score in predicting outcome of hyperacute stroke. <em>Lancet</em>, 2000; 355: 1670–1674.</li>
+                  </ul>
+                </div>
               </div>
             </div>
           )}

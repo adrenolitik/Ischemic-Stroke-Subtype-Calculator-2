@@ -116,18 +116,34 @@ export const Step5Imaging: React.FC<Step5Props> = ({ data, onChange }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* ASPECT Score */}
         <div className="bg-white dark:bg-slate-800/80 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
               <Brain className="w-4 h-4 text-purple-600" />
               <span>Шкала ASPECT (Приложение 8)</span>
             </h4>
-            <span className="text-xs font-extrabold text-purple-600 dark:text-purple-400">
-              {data.aspectScore} / 10 баллов
-            </span>
+            <div className="flex items-center space-x-1.5 shrink-0">
+              <input
+                id="aspect-score-number-input"
+                type="number"
+                min={0}
+                max={10}
+                step={1}
+                value={data.aspectScore}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  onChange({ aspectScore: isNaN(val) ? 0 : Math.min(10, Math.max(0, val)) });
+                }}
+                className="w-14 px-2 py-1 text-xs font-bold text-purple-700 dark:text-purple-300 bg-white dark:bg-slate-800 border border-purple-300 dark:border-purple-700 rounded-lg text-center focus:ring-2 focus:ring-purple-500 outline-none"
+              />
+              <span className="text-xs font-extrabold text-purple-600 dark:text-purple-400">
+                / 10
+              </span>
+            </div>
           </div>
 
           <div className="space-y-2">
             <input
+              id="aspect-score-slider"
               type="range"
               min={0}
               max={10}
@@ -137,7 +153,31 @@ export const Step5Imaging: React.FC<Step5Props> = ({ data, onChange }) => {
               className="w-full accent-purple-600 cursor-pointer"
             />
 
-            <div className="flex justify-between text-[10px] text-slate-500 font-medium">
+            {/* Quick Presets */}
+            <div className="flex flex-wrap gap-1">
+              {[
+                { val: 0, label: '0 б.' },
+                { val: 4, label: '4 б.' },
+                { val: 6, label: '6 б. (ВСТЭ)' },
+                { val: 8, label: '8 б.' },
+                { val: 10, label: '10 б. (Норма)' }
+              ].map((p) => (
+                <button
+                  key={p.val}
+                  type="button"
+                  onClick={() => onChange({ aspectScore: p.val })}
+                  className={`text-[10px] px-1.5 py-0.5 rounded font-medium border transition ${
+                    data.aspectScore === p.val
+                      ? 'bg-purple-600 text-white border-purple-600'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex justify-between text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-200 dark:border-slate-700/60">
               <span className="text-rose-600 font-bold">0–5 (Большой инфаркт)</span>
               <span className="text-amber-600 font-bold">6–7 (ВСТЭ допустима)</span>
               <span className="text-emerald-600 font-bold">8–10 (Идеально для ВСТЭ)</span>

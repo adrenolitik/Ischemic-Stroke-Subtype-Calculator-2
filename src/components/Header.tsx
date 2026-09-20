@@ -15,6 +15,7 @@ interface HeaderProps {
   onSelectSampleCase: (preset: ClinicalCasePreset) => void;
   onOpenSavedCases: () => void;
   onOpenReference: () => void;
+  onOpenReport: () => void;
   onReset: () => void;
   activeStep: number;
   totalSteps: number;
@@ -24,6 +25,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectSampleCase,
   onOpenSavedCases,
   onOpenReference,
+  onOpenReport,
   onReset,
   activeStep,
   totalSteps
@@ -88,6 +90,18 @@ export const Header: React.FC<HeaderProps> = ({
                 ))}
               </div>
             </div>
+
+            {/* Conclusion / Report Button */}
+            <button
+              id="header-open-report-btn"
+              type="button"
+              onClick={onOpenReport}
+              className="px-3 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-lg transition shadow-xs flex items-center space-x-1.5"
+              title="Открыть медицинское заключение (Протокол МЗ РБ № 1)"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Заключение</span>
+            </button>
 
             {/* Reference Manual Button */}
             <button

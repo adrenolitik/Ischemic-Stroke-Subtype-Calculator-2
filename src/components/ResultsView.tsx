@@ -128,8 +128,8 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
               onClick={onOpenReportModal}
               className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-xl shadow-md transition flex items-center space-x-2"
             >
-              <Printer className="w-4 h-4" />
-              <span>Печать / Протокол МЗ РБ</span>
+              <FileText className="w-4 h-4" />
+              <span>Открыть медицинское заключение</span>
             </button>
           </div>
 
@@ -496,6 +496,29 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
             <strong>Хирургические / Интервенционные рекомендации:</strong> {recommendations.surgicalOrInterventional}
           </div>
         )}
+      </div>
+
+      {/* Prominent Bottom Action Banner */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 sm:p-5 rounded-2xl shadow-lg text-white flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h4 className="text-sm sm:text-base font-bold flex items-center gap-2">
+            <FileText className="w-5 h-5 text-blue-200" />
+            <span>Официальное медицинское заключение готово</span>
+          </h4>
+          <p className="text-xs text-blue-100 mt-0.5">
+            Сформирован структурированный врачебный протокол в соответствии с Протоколом МЗ РБ № 1 от 05.01.2026. Доступны печать, копирование, экспорт (.txt) и отправка.
+          </p>
+        </div>
+
+        <button
+          id="bottom-open-report-btn"
+          type="button"
+          onClick={onOpenReportModal}
+          className="w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-extrabold text-blue-900 bg-white hover:bg-blue-50 rounded-xl shadow transition flex items-center justify-center space-x-2 shrink-0 cursor-pointer"
+        >
+          <FileText className="w-4 h-4 text-blue-600" />
+          <span>Открыть медицинское заключение</span>
+        </button>
       </div>
 
       {/* Edit Inputs Link */}

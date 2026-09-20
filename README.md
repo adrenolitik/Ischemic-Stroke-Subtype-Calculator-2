@@ -73,6 +73,19 @@
 
 ---
 
+## 📚 Клинические источники и нормативная литература
+
+Алгоритмы диагностики, классификации, шкалы и терапевтические рекомендации приложения базируются на фундаментальных источниках:
+
+1. **Клинический протокол «Фармакотерапия и хирургическое лечение пациентов с острыми нарушениями мозгового кровообращения»**, утвержденный Постановлением Министерства здравоохранения Республики Беларусь № 1 от 05.01.2026.
+2. **Ишемический инсульт: диагностика, лечение, реабилитация и профилактика. Руководство для врачей / О.И. Виноградов, А.А. Кулеш, Д.А. Демин. - М.: Логосфера, 2024. - 256 с.**
+3. **Adams HP Jr, Bendixen BH, Kappelle LJ, et al.** Classification of subtype of acute ischemic stroke. Definitions for use in a multicenter clinical trial. TOAST, Trial of Org 10172 in Acute Stroke Treatment. *Stroke*, 1993; 24(1): 35–41.
+4. **Bamford J, Sandercock P, Dennis M, Burn J, Warlow C.** Classification and natural history of clinically identifiable subtypes of cerebral infarction. *Lancet*, 1991; 337(8756): 1521–1526 (Классификация OCSP).
+5. **Hart RG, Diener HC, Coutts SB, et al.** Embolic strokes of undetermined source: the case for a new clinical construct. *Lancet Neurol*, 2014; 13(4): 429–438 (Концепция ESUS).
+6. **European Stroke Organisation (ESO) Guidelines** on Intravenous Thrombolysis and Endovascular Treatment for Acute Ischaemic Stroke.
+
+---
+
 ## 🛠 Технологический стек
 
 - **Фреймворк:** React 19 (TypeScript)
@@ -111,13 +124,12 @@
         ├── ReportModal.tsx      # Медицинское заключение для печати и копирования
         ├── ArchiveModal.tsx     # Архив сохраненных расчетов
         ├── ResultsView.tsx      # Итоговая панель результатов и рекомендаций
-        └── WizardSteps/         # Пошаговый клинический опросник (Шаги 1–6)
-            ├── Step1History.tsx
-            ├── Step2Neurology.tsx
-            ├── Step3Vascular.tsx
-            ├── Step4Hemodynamics.tsx
-            ├── Step5Imaging.tsx
-            └── Step6Pharmacology.tsx
+        └── WizardSteps/         # 5-этапный оптимизированный клинический опросник
+            ├── Step1Demographics.tsx # Демография, анамнез, факторы риска
+            ├── Step2OnsetSeverity.tsx # Дебют, тяжесть (NIHSS), СКФ / CrCl (слайдеры и ввод цифр)
+            ├── Step3NeurologyOcsp.tsx # Неврологические синдромы и топика OCSP
+            ├── Step4Hemodynamics.tsx # Гемодинамика, ЭКГ, ЭхоКГ, стеноз артерий (NASCET %)
+            └── Step5Imaging.tsx     # Нейровизуализация (КТ/МРТ/КТА), шкала ASPECT (0-10)
 ```
 
 ---

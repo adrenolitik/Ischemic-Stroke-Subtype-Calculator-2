@@ -27,7 +27,8 @@ import {
   ChevronLeft,
   Calculator,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  FileText
 } from 'lucide-react';
 
 const DEFAULT_PATIENT_DATA: PatientData = {
@@ -112,7 +113,7 @@ const DEFAULT_PATIENT_DATA: PatientData = {
 
 const STEP_LABELS = [
   { id: 1, title: 'Анамнез', desc: 'Возраст и ФР', icon: User },
-  { id: 2, title: 'Дебют & NIHSS', desc: 'Начало и тяжесть', icon: Clock },
+  { id: 2, title: 'Дебют, NIHSS & СКФ', desc: 'Окно, тяжесть, CrCl', icon: Clock },
   { id: 3, title: 'Неврология & OCSP', desc: 'Симптомы и очаг', icon: Brain },
   { id: 4, title: 'Гемодинамика', desc: 'АД, ЭКГ, ЭхоКГ', icon: Activity },
   { id: 5, title: 'КТ / МРТ', desc: 'Нейровизуализация', icon: FileScan }
@@ -196,6 +197,7 @@ export default function App() {
         onSelectSampleCase={handleSelectSamplePreset}
         onOpenSavedCases={() => setIsSavedCasesModalOpen(true)}
         onOpenReference={() => setIsReferenceModalOpen(true)}
+        onOpenReport={() => setIsReportModalOpen(true)}
         onReset={handleResetForm}
         activeStep={activeStep}
         totalSteps={5}
@@ -306,16 +308,30 @@ export default function App() {
                 </button>
               ) : <div />}
 
-              <div className="flex items-center space-x-3">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3">
                 {/* Instant Calculation Shortcut Button */}
                 <button
                   id="instant-calculate-btn"
                   type="button"
                   onClick={() => setShowResults(true)}
-                  className="px-4 py-2 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 rounded-xl hover:bg-blue-100 transition flex items-center space-x-1.5"
+                  className="px-3.5 py-2 text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 rounded-xl hover:bg-blue-100 transition flex items-center space-x-1.5"
+                  title="Показать шкалы, вероятности подтипов и аналитику"
                 >
                   <Calculator className="w-4 h-4 text-blue-600" />
-                  <span>Показать расчет (TOAST + OCSP)</span>
+                  <span className="hidden sm:inline">Аналитика</span>
+                  <span className="sm:hidden">Расчет</span>
+                </button>
+
+                {/* Direct Conclusion / Report Modal Button */}
+                <button
+                  id="wizard-open-report-btn"
+                  type="button"
+                  onClick={() => setIsReportModalOpen(true)}
+                  className="px-3.5 py-2 text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 rounded-xl hover:bg-purple-100 transition flex items-center space-x-1.5"
+                  title="Открыть официальное медицинское заключение (Протокол МЗ РБ № 1)"
+                >
+                  <FileText className="w-4 h-4 text-purple-600" />
+                  <span>Заключение</span>
                 </button>
 
                 {activeStep < 5 ? (
@@ -332,11 +348,14 @@ export default function App() {
                   <button
                     id="wizard-finish-btn"
                     type="button"
-                    onClick={() => setShowResults(true)}
-                    className="px-6 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition flex items-center space-x-2"
+                    onClick={() => {
+                      setShowResults(true);
+                      setIsReportModalOpen(true);
+                    }}
+                    className="px-5 sm:px-6 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition flex items-center space-x-2 cursor-pointer"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>Сформировать итоговый заключение</span>
+                    <span>Сформировать и открыть заключение</span>
                   </button>
                 )}
               </div>

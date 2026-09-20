@@ -270,43 +270,16 @@ export const Step1Demographics: React.FC<Step1Props> = ({ data, onChange }) => {
         </div>
       </div>
 
-      {/* Organ Function & DOAC Comorbidities (Appendix 14) */}
+      {/* DOAC Selection Factors & Comorbidities (Appendix 14) */}
       <div className="bg-slate-50 dark:bg-slate-800/50 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
-        <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <Activity className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-          <span>Почечная функция и клинические факторы выбора антикоагулянта (Приложение 14)</span>
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Activity className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <span>Клинические факторы выбора антикоагулянта (Приложение 14)</span>
+          </h3>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              Клиренс креатинина CrCl (мл/мин)
-            </label>
-            <div className="relative">
-              <input
-                id="crcl-input"
-                type="number"
-                min={10}
-                max={160}
-                value={data.estimatedCrCl || ''}
-                onChange={(e) => onChange({ estimatedCrCl: parseInt(e.target.value) || 60 })}
-                className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition"
-              />
-              <span className="absolute right-3 top-2.5 text-xs text-slate-400">мл/мин</span>
-            </div>
-            {data.estimatedCrCl < 30 ? (
-              <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1 font-bold">
-                CrCl &lt; 30: Дабигатран противопоказан! Препарат выбора — Апиксабан или Варфарин (Приложение 14).
-              </p>
-            ) : data.estimatedCrCl < 50 ? (
-              <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
-                CrCl 30–50: снижение дозы Ривароксабана (15 мг) или Апиксабана (2.5 мг)
-              </p>
-            ) : (
-              <p className="text-[11px] text-slate-500 mt-1">Сохранная скорость клубочковой фильтрации</p>
-            )}
-          </div>
-
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               Масса тела (кг)
@@ -323,10 +296,16 @@ export const Step1Demographics: React.FC<Step1Props> = ({ data, onChange }) => {
               />
               <span className="absolute right-3 top-2.5 text-xs text-slate-400">кг</span>
             </div>
-            {data.weightKg > 120 && (
-              <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+            {data.weightKg > 120 ? (
+              <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1 font-semibold">
                 Вес &gt; 120 кг: по Приложению 14 предпочтителен Варфарин под контролем МНО
               </p>
+            ) : data.weightKg < 60 ? (
+              <p className="text-[11px] text-blue-600 dark:text-blue-400 mt-1">
+                Вес &le; 60 кг: один из критериев снижения дозы апиксабана (п. 43)
+              </p>
+            ) : (
+              <p className="text-[11px] text-slate-500 mt-1">Стандартная весовая категория</p>
             )}
           </div>
 

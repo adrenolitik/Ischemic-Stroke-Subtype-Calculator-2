@@ -231,6 +231,17 @@ export interface ReperfusionAssessment {
 }
 
 export interface AntithromboticPlan {
+  // Strategy & Summary
+  strategy: 'OAC' | 'antiplatelet';
+  timingDay: string;
+  timingRationale: string;
+  primaryRegimen: string;
+  dosingDetails: string;
+  duration: string;
+  safetyNotes: string;
+  alternativeRegimen?: string;
+
+  // Additional protocol details
   acuteFirst24h: string; // АСК 150-300 мг или ЗАПРЕТ после ТЛТ/ВСТЭ (п. 39)
   secondaryPreventionCategory: 'non_cardioembolic' | 'cardioembolic' | 'dissection' | 'rare';
   regimenSummaryRu: string;
@@ -279,15 +290,38 @@ export interface CalculationResult {
   dominantSubtype: ToastSubtypeInfo;
   dominantCertainty: SubtypeCertainty;
   dominantCertaintyRu: string;
+  confidenceLevelRu: string; // Синоним dominantCertaintyRu для UI/протокола
   confidenceDescriptionRu: string;
   toastSubtypes: SubtypeCalculationResult[];
   ocspResult: OCSPInfo;
   esusAssessment: ESUSAssessment;
   reperfusionAssessment: ReperfusionAssessment;
+  reperfusion: {
+    ivtEligible: boolean;
+    ivtWindowStatus: string;
+    ivtContraindications: string[];
+    evtEligible: boolean;
+    evtWindowStatus: string;
+    evtRationale: string;
+  };
   antithromboticPlan: AntithromboticPlan;
   malignantStrokeAlert: MalignantStrokeAlert;
+  malignantAlert: {
+    isSuspected: boolean;
+    alertTitle: string;
+    urgencyRationale: string;
+    actionPlan: string;
+  };
   abcd2Result?: ABCD2Result;
+  abcd2Score: {
+    score: number;
+    riskCategory: string;
+  };
   hasBledResult: HasBledResult;
+  hasBledScore: {
+    score: number;
+    riskLevel: string;
+  };
   contributingPredictors: ScoreDetailItem[];
   basicCareRecommendations: {
     bloodPressure: string;
@@ -298,6 +332,13 @@ export interface CalculationResult {
     dysphagiaAndNutrition: string;
     furtherWorkup: string[];
     carotidSurgery?: string; // КЭЭ в первые 14 дней (п. 46)
+  };
+  recommendations: {
+    antithrombotic: string;
+    lipidTherapy: string;
+    bpControl: string;
+    furtherWorkup: string[];
+    surgicalOrInterventional?: string;
   };
   protocolVersion: string; // "Клинический протокол МЗ РБ № 1 от 05.01.2026"
   calcDate: string;

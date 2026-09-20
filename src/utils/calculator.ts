@@ -583,6 +583,16 @@ export function calculateAntithromboticPlan(
     }
 
     return {
+      strategy: 'OAC',
+      timingDay: recommendedStartDay,
+      timingRationale: ruleExplanation,
+      primaryRegimen: drugChoice,
+      dosingDetails: drugChoiceRationale,
+      duration: 'Пожизненный прием ОАК (неопределенно долго)',
+      safetyNotes:
+        'Контроль функции почек (CrCl), печеночных проб и коагулограммы. При CrCl < 30 мл/мин — коррекция дозы ПОАК или Варфарин.',
+      alternativeRegimen:
+        'Варфарин (целевое МНО 2.0–3.0) при механических протезах клапанов или митральном стенозе сред./тяж. степени.',
       acuteFirst24h,
       secondaryPreventionCategory: 'cardioembolic',
       regimenSummaryRu: `Кардиоэмболический подтип: пероральная антикоагулянтная терапия (ОАК). Рекомендуемый старт: ${recommendedStartDay}.`,
@@ -602,6 +612,14 @@ export function calculateAntithromboticPlan(
   // Rare / Dissection
   if (dominantSubtype === 'other' && data.selectedRareCauses.includes('arterial_dissection')) {
     return {
+      strategy: 'antiplatelet',
+      timingDay: 'С первых суток',
+      timingRationale: 'Острая фаза диссекции церебральной артерии',
+      primaryRegimen: 'ОАК (ПОАК или Варфарин МНО 2.0–3.0) ИЛИ ДААТ (Клопидогрел + АСК)',
+      dosingDetails: 'Терапия на срок 3–6 месяцев под контролем ангиографии (КТА/МРА)',
+      duration: '3–6 месяцев',
+      safetyNotes:
+        'Контрольная КТА/МРА через 3–6 месяцев для оценки реканализации и заживления интимы (п. 43.3)',
       acuteFirst24h,
       secondaryPreventionCategory: 'dissection',
       regimenSummaryRu:
@@ -625,6 +643,16 @@ export function calculateAntithromboticPlan(
 
   if (isModerateStrokeOrStenosis30 && !data.activeBleeding) {
     return {
+      strategy: 'antiplatelet',
+      timingDay: 'С первых суток (в первые 24 часа)',
+      timingRationale: acuteFirst24h,
+      primaryRegimen: 'Тикагрелор + Ацетилсалициловая кислота (ДААТ)',
+      dosingDetails: 'Тикагрелор нагрузочная доза 180 мг, затем 90 мг 2 раза в сутки + АСК 75–100 мг/сут.',
+      duration: '30 суток с момента дебюта симптомов',
+      safetyNotes:
+        'С 31-х суток — пожизненная монотерапия АСК 75–100 мг/сут или Клопидогрелом 75 мг/сут. Обязателен ИПП (пантопразол).',
+      alternativeRegimen:
+        'При непереносимости тикагрелора — ДААТ с клопидогрелом (300 мг нагрузка, далее 75 мг) + АСК 75 мг',
       acuteFirst24h,
       secondaryPreventionCategory: 'non_cardioembolic',
       regimenSummaryRu:
@@ -642,6 +670,16 @@ export function calculateAntithromboticPlan(
 
   if (isMinorStrokeOrHighRiskTIA && !data.activeBleeding) {
     return {
+      strategy: 'antiplatelet',
+      timingDay: 'С первых суток (в первые 24 часа)',
+      timingRationale: acuteFirst24h,
+      primaryRegimen: 'Клопидогрел + Ацетилсалициловая кислота (ДААТ)',
+      dosingDetails:
+        'Клопидогрел нагрузочная доза 300 мг, затем 75 мг/сут + АСК 150–300 мг нагрузочная, затем 75 мг/сут.',
+      duration: '21 сутки с момента дебюта симптомов',
+      safetyNotes:
+        'С 22-х суток — переход на пожизненную монотерапию (Клопидогрел 75 мг/сут или АСК 75–100 мг/сут). Обязателен ИПП.',
+      alternativeRegimen: 'При непереносимости клопидогрела — монотерапия АСК 75–100 мг/сут',
       acuteFirst24h,
       secondaryPreventionCategory: 'non_cardioembolic',
       regimenSummaryRu:
@@ -668,6 +706,21 @@ export function calculateAntithromboticPlan(
   }
 
   return {
+    strategy: 'antiplatelet',
+    timingDay: 'С первых суток (в первые 24 часа)',
+    timingRationale: acuteFirst24h,
+    primaryRegimen:
+      data.multivascularDisease && hasBledResult.compassRegimenAllowed
+        ? 'АСК 100 мг/сут + Ривароксабан 2.5 мг 2 р/сут (режим COMPASS через 30 дней)'
+        : 'Монотерапия: АСК 75–100 мг/сут ИЛИ Клопидогрел 75 мг/сут',
+    dosingDetails:
+      data.multivascularDisease && hasBledResult.compassRegimenAllowed
+        ? 'В первые 30 дней — АСК 100 мг/сут, затем добавление Ривароксабана 2.5 мг 2 раза в сутки'
+        : 'АСК 75–100 мг 1 раз в сутки утром после еды ИЛИ Клопидогрел 75 мг 1 раз в сутки',
+    duration: 'Пожизненно',
+    safetyNotes:
+      'Контроль гемодинамики, исключение источников кровотечения. Запрещен одновременный прием двух антиагрегантов без специальных показаний.',
+    alternativeRegimen: 'Клопидогрел 75 мг/сут при аспириновой язве / непереносимости АСК',
     acuteFirst24h,
     secondaryPreventionCategory: 'non_cardioembolic',
     regimenSummaryRu
@@ -796,7 +849,7 @@ export function calculateStrokeSubtypes(data: PatientData): CalculationResult {
       .join(', ');
     addScore(
       'cardioembolic',
-      4.0,
+      5.0,
       'Кардиальный источник эмболии ВЫСОКОГО РИСКА (Приложение 1)',
       names,
       'п. 11.1 (Достоверный кардиоэмболический подтип)'
@@ -806,9 +859,9 @@ export function calculateStrokeSubtypes(data: PatientData): CalculationResult {
   if (data.systemicEmbolism) {
     addScore(
       'cardioembolic',
-      2.0,
+      3.0,
       'Системная артериальная эмболия в анамнезе (конечности, почки, селезенка)',
-      'Подтверждает системный эмбологенный потенциал',
+      'Подтверждает системный эмбологенный потенциал (минимум 3.0 б.)',
       'п. 11.2'
     );
   }
@@ -816,7 +869,7 @@ export function calculateStrokeSubtypes(data: PatientData): CalculationResult {
   if (data.bihemisphericAcuteInfarcts) {
     addScore(
       'cardioembolic',
-      2.5,
+      3.5,
       'Множественные острые инфаркты в обоих полушариях (или каротидный + ВББА)',
       'При отсутствии ипсилатеральной окклюзии свидетельствует о центральном (кардиогенном) эмболическом источнике',
       'п. 11.2'
@@ -830,11 +883,33 @@ export function calculateStrokeSubtypes(data: PatientData): CalculationResult {
       .join(', ');
     addScore(
       'cardioembolic',
-      2.0,
+      3.0,
       'Кардиальный источник УМЕРЕННОГО / НЕОПРЕДЕЛЕННОГО РИСКА (Приложение 1)',
       names,
-      'п. 11.3 (Возможный кардиоэмболический подтип)'
+      'п. 11.3 (Возможный кардиоэмболический подтип — минимум 3.0 б.)'
     );
+  }
+
+  if (data.chfOrPostMI && highRiskSources.length === 0 && lowRiskSources.length === 0) {
+    addScore(
+      'cardioembolic',
+      3.0,
+      'Хроническая сердечная недостаточность / постинфарктный кардиосклероз',
+      'Кардиальная коморбидность с потенциальным тромбообразованием в полостях сердца',
+      'п. 11, Приложение 1'
+    );
+  }
+
+  // Ensure minimum 3.0 points for cardioembolic subtype if any cardiac finding is present
+  const hasAnyCardiacFinding =
+    highRiskSources.length > 0 ||
+    lowRiskSources.length > 0 ||
+    data.systemicEmbolism ||
+    data.bihemisphericAcuteInfarcts ||
+    data.chfOrPostMI;
+
+  if (hasAnyCardiacFinding && scores.cardioembolic < 3.0) {
+    scores.cardioembolic = 3.0;
   }
 
   // 3. Small-Vessel Lacunar Stroke (Chapter 2, item 12)
@@ -1217,21 +1292,77 @@ export function calculateStrokeSubtypes(data: PatientData): CalculationResult {
     carotidSurgery
   };
 
+  // UI compatibility structures
+  const reperfusion = {
+    ivtEligible: reperfusionAssessment.ivtEligible,
+    ivtWindowStatus:
+      reperfusionAssessment.ivtWindowType === 'standard_4_5h'
+        ? 'Терапевтическое окно 0–4.5 часа (стандартное)'
+        : reperfusionAssessment.ivtWindowType === 'extended_4_5_to_9h'
+        ? 'Расширенное окно 4.5–9 часов / wake-up'
+        : 'Вне терапевтического окна (> 4.5 ч) либо наличие противопоказаний',
+    ivtContraindications: reperfusionAssessment.ivtContraindications,
+    evtEligible: reperfusionAssessment.evtEligible,
+    evtWindowStatus:
+      reperfusionAssessment.evtWindowType === 'window_0_6h'
+        ? 'Терапевтическое окно 0–6 часов'
+        : reperfusionAssessment.evtWindowType === 'window_6_24h'
+        ? 'Расширенное окно 6–24 часа (DAWN / DEFUSE-3)'
+        : 'Вне терапевтического окна либо отсутствие окклюзии крупной артерии',
+    evtRationale: reperfusionAssessment.evtRationale
+  };
+
+  const malignantAlert = {
+    isSuspected: malignantStrokeAlert.isHighRisk,
+    alertTitle:
+      malignantStrokeAlert.type === 'MCA'
+        ? 'Угроза злокачественного инфаркта в бассейне СМА'
+        : malignantStrokeAlert.type === 'Cerebellar'
+        ? 'Угроза злокачественного инфаркта мозжечка'
+        : 'Риск отека мозга умеренный',
+    urgencyRationale: malignantStrokeAlert.riskDescription,
+    actionPlan: malignantStrokeAlert.surgicalProcedure
+  };
+
+  const abcd2Score = {
+    score: abcd2Result?.score ?? 0,
+    riskCategory: abcd2Result?.riskCategoryRu ?? 'Низкий'
+  };
+
+  const hasBledScore = {
+    score: hasBledResult.score,
+    riskLevel: hasBledResult.riskCategoryRu
+  };
+
+  const recommendations = {
+    antithrombotic: antithromboticPlan.regimenSummaryRu,
+    lipidTherapy: basicCareRecommendations.lipidTarget,
+    bpControl: basicCareRecommendations.bloodPressure,
+    furtherWorkup: basicCareRecommendations.furtherWorkup,
+    surgicalOrInterventional: basicCareRecommendations.carotidSurgery
+  };
+
   return {
     dominantSubtype: dominantSubtypeInfo,
     dominantCertainty: dominantSubtypeResult.certainty,
     dominantCertaintyRu: dominantSubtypeResult.certaintyRu,
+    confidenceLevelRu: dominantSubtypeResult.certaintyRu,
     confidenceDescriptionRu,
     toastSubtypes: subtypeResults,
     ocspResult,
     esusAssessment,
     reperfusionAssessment,
+    reperfusion,
     antithromboticPlan,
     malignantStrokeAlert,
+    malignantAlert,
     abcd2Result,
+    abcd2Score,
     hasBledResult,
+    hasBledScore,
     contributingPredictors: allContributingPredictors,
     basicCareRecommendations,
+    recommendations,
     protocolVersion: 'Клинический протокол МЗ РБ № 1 от 05.01.2026',
     calcDate: new Date().toLocaleDateString('ru-RU', {
       day: '2-digit',

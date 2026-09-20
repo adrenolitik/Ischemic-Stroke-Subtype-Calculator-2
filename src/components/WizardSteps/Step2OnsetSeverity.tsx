@@ -8,7 +8,8 @@ import {
   AlertCircle,
   Zap,
   HelpCircle,
-  Flame
+  Flame,
+  Activity
 } from 'lucide-react';
 
 interface Step2Props {
@@ -74,26 +75,67 @@ export const Step2OnsetSeverity: React.FC<Step2Props> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                Время от начала симптомов (в часах):
+                Время от начала симптомов:
               </label>
-              <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                {data.onsetTimeHours} ч.
-              </span>
+              <div className="flex items-center space-x-1.5 shrink-0">
+                <input
+                  id="onset-time-number-input"
+                  type="number"
+                  min={0}
+                  max={72}
+                  step={0.5}
+                  value={data.onsetTimeHours}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    onChange({ onsetTimeHours: isNaN(val) ? 0 : Math.max(0, Math.min(72, val)) });
+                  }}
+                  className="w-16 px-2 py-1 text-xs font-bold text-blue-700 dark:text-blue-300 bg-white dark:bg-slate-800 border border-blue-300 dark:border-blue-700 rounded-lg text-center focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+                <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                  ч.
+                </span>
+              </div>
             </div>
 
             <input
+              id="onset-time-slider"
               type="range"
               min={0.5}
               max={24}
               step={0.5}
-              value={data.onsetTimeHours}
+              value={Math.min(24, Math.max(0.5, data.onsetTimeHours))}
               onChange={(e) => onChange({ onsetTimeHours: parseFloat(e.target.value) })}
               className="w-full accent-blue-600 cursor-pointer"
             />
 
-            <div className="flex justify-between text-[10px] text-slate-500 font-medium">
+            {/* Quick Presets */}
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {[
+                { val: 1.5, label: '1.5 ч' },
+                { val: 3.0, label: '3.0 ч' },
+                { val: 4.5, label: '4.5 ч (лимит ТЛТ)' },
+                { val: 6.0, label: '6 ч (ВСТЭ 1)' },
+                { val: 9.0, label: '9 ч (Mismatch)' },
+                { val: 24.0, label: '24 ч' }
+              ].map((p) => (
+                <button
+                  key={p.val}
+                  type="button"
+                  onClick={() => onChange({ onsetTimeHours: p.val })}
+                  className={`text-[10px] px-2 py-0.5 rounded-md font-medium border transition ${
+                    data.onsetTimeHours === p.val
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex justify-between text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-200 dark:border-slate-700/60">
               <span className="text-emerald-600 font-bold">0 — 4.5 ч (ТЛТ)</span>
               <span className="text-blue-600 font-bold">4.5 — 9 ч (ТЛТ mismatch)</span>
               <span className="text-purple-600 font-bold">0 — 6 — 24 ч (ВСТЭ)</span>
@@ -229,26 +271,62 @@ export const Step2OnsetSeverity: React.FC<Step2Props> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Суммарный балл NIHSS (0–42):
-            </label>
-            <div className="flex items-center space-x-3">
-              <input
-                id="nihss-score-input"
-                type="number"
-                min={0}
-                max={42}
-                value={data.nihssScore}
-                onChange={(e) => {
-                  const val = Math.min(42, Math.max(0, parseInt(e.target.value) || 0));
-                  onChange({ nihssScore: val });
-                }}
-                className="w-20 px-3 py-2 text-xl font-extrabold text-purple-700 dark:text-purple-300 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-center"
-              />
-              <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold">
-                баллов
-              </span>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                Суммарный балл NIHSS:
+              </label>
+              <div className="flex items-center space-x-1.5">
+                <input
+                  id="nihss-score-input"
+                  type="number"
+                  min={0}
+                  max={42}
+                  value={data.nihssScore}
+                  onChange={(e) => {
+                    const val = Math.min(42, Math.max(0, parseInt(e.target.value) || 0));
+                    onChange({ nihssScore: val });
+                  }}
+                  className="w-16 px-2 py-1 text-sm font-extrabold text-purple-700 dark:text-purple-300 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-center"
+                />
+                <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold">
+                  б.
+                </span>
+              </div>
+            </div>
+
+            <input
+              id="nihss-score-slider"
+              type="range"
+              min={0}
+              max={42}
+              step={1}
+              value={data.nihssScore}
+              onChange={(e) => onChange({ nihssScore: parseInt(e.target.value) || 0 })}
+              className="w-full accent-purple-600 cursor-pointer"
+            />
+
+            <div className="flex flex-wrap gap-1 pt-1">
+              {[
+                { val: 0, label: '0 (Норма)' },
+                { val: 2, label: '2 (ТИА)' },
+                { val: 3, label: '3 (ДААТ)' },
+                { val: 8, label: '8 (ВСТЭ)' },
+                { val: 16, label: '16 (Тяжелый)' }
+              ].map((p) => (
+                <button
+                  key={p.val}
+                  type="button"
+                  onClick={() => onChange({ nihssScore: p.val })}
+                  className={`text-[10px] px-1.5 py-0.5 rounded font-medium border transition ${
+                    data.nihssScore === p.val
+                      ? 'bg-purple-600 text-white border-purple-600'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -276,6 +354,134 @@ export const Step2OnsetSeverity: React.FC<Step2Props> = ({
                 • Тяжелый инсульт (NIHSS &gt; 15): высокий риск геморрагической трансформации. Старт ОАК отсрочивается (с 6-х или 10-х суток) (п. 43.1). При окклюзии М1 — настороженность в отношении злокачественного отека (п. 44).
               </span>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Glomerular Filtration Rate (СКФ / CrCl) */}
+      <div className="bg-white dark:bg-slate-800/80 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-700/80 pb-3">
+          <div className="flex items-center gap-2">
+            <Activity className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Скорость клубочковой фильтрации (СКФ) / Клиренс креатинина (CrCl)
+              </h3>
+              <p className="text-xs text-slate-500">
+                Оценка функции почек для прецизионного дозирования ПОАК и реперфузии (Приложение 14)
+              </p>
+            </div>
+          </div>
+          <span className={`text-xs px-2.5 py-1 rounded-full font-bold self-start sm:self-auto ${
+            data.estimatedCrCl < 30
+              ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200'
+              : data.estimatedCrCl < 50
+              ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200'
+              : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200'
+          }`}>
+            CrCl: {data.estimatedCrCl} мл/мин
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                Клиренс креатинина (CrCl по Кокрофту-Голту / СКФ):
+              </label>
+              <div className="flex items-center space-x-1.5 shrink-0">
+                <input
+                  id="crcl-step2-number-input"
+                  type="number"
+                  min={5}
+                  max={180}
+                  step={1}
+                  value={data.estimatedCrCl || ''}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    onChange({ estimatedCrCl: isNaN(val) ? 0 : Math.max(5, Math.min(180, val)) });
+                  }}
+                  className="w-20 px-2 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-white dark:bg-slate-800 border border-indigo-300 dark:border-indigo-700 rounded-lg text-center focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+                <span className="text-xs font-medium text-slate-500">мл/мин</span>
+              </div>
+            </div>
+
+            <input
+              id="crcl-step2-slider"
+              type="range"
+              min={10}
+              max={140}
+              step={1}
+              value={Math.min(140, Math.max(10, data.estimatedCrCl))}
+              onChange={(e) => onChange({ estimatedCrCl: parseInt(e.target.value) || 60 })}
+              className="w-full accent-indigo-600 cursor-pointer"
+            />
+
+            {/* Quick Presets */}
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {[
+                { val: 95, label: '95 (Норма)' },
+                { val: 65, label: '65 (ХБП 2 ст.)' },
+                { val: 45, label: '45 (ХБП 3 ст.)' },
+                { val: 25, label: '25 (ХБП 4 ст.)' },
+                { val: 12, label: '12 (ХБП 5 ст.)' }
+              ].map((p) => (
+                <button
+                  key={p.val}
+                  type="button"
+                  onClick={() => onChange({ estimatedCrCl: p.val })}
+                  className={`text-[10px] px-2 py-0.5 rounded-md font-medium border transition ${
+                    data.estimatedCrCl === p.val
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex justify-between text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-200 dark:border-slate-700/60">
+              <span className="text-rose-600 font-bold">&lt; 30 (Противопоказан Дабигатран)</span>
+              <span className="text-amber-600 font-bold">30–50 (Редукция дозы)</span>
+              <span className="text-emerald-600 font-bold">&ge; 60 (Норма)</span>
+            </div>
+          </div>
+
+          {/* Clinical Interpretation & Guidelines */}
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col justify-between text-xs space-y-2">
+            <div>
+              <span className="font-bold text-slate-800 dark:text-slate-200 block mb-1">
+                Фармакологическая тактика по Приложению 14 к Протоколу МЗ РБ № 1:
+              </span>
+              {data.estimatedCrCl < 15 ? (
+                <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-200 text-xs font-semibold">
+                  ⛔ CrCl &lt; 15 мл/мин (ХБП 5 ст.): терминальная почечная недостаточность. Все ПОАК противопоказаны. Антикоагуляция возможна только Варфарином под строгим контролем МНО (целевой диапазон 2.0–3.0) либо НФГ.
+                </div>
+              ) : data.estimatedCrCl < 30 ? (
+                <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-200 text-xs font-semibold">
+                  ⛔ CrCl &lt; 30 мл/мин (ХБП 4 ст.): <strong>Дабигатран строго противопоказан!</strong> Препарат выбора — Апиксабан (2.5 мг 2 р/сут) или Варфарин (контроль МНО). Ривароксабан с осторожностью (15 мг 1 р/сут).
+                </div>
+              ) : data.estimatedCrCl < 50 ? (
+                <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200 text-xs">
+                  ⚠️ CrCl 30–50 мл/мин (ХБП 3 ст.): требуется снижение доз ПОАК:
+                  <ul className="list-disc list-inside mt-1 space-y-0.5">
+                    <li>Ривароксабан: редукция до 15 мг 1 раз в сутки</li>
+                    <li>Апиксабан: 2.5 мг 2 р/сут при сочетании с возрастом &ge; 80 лет или весом &le; 60 кг</li>
+                    <li>Дабигатран: рассмотреть снижение до 110 мг 2 р/сут при риске кровотечений</li>
+                  </ul>
+                </div>
+              ) : (
+                <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200 text-xs">
+                  ✓ CrCl &ge; 50 мл/мин: сохранная почечная функция. Допустимы стандартные терапевтические дозировки ПОАК (Апиксабан 5 мг 2 р/сут, Ривароксабан 20 мг 1 р/сут, Дабигатран 150 мг 2 р/сут).
+                </div>
+              )}
+            </div>
+
+            <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-200 dark:border-slate-700/60">
+              * Формула Кокрофта-Голта учитывает возраст ({data.age} лет), пол ({data.gender === 'male' ? 'М' : 'Ж'}) и массу тела ({data.weightKg} кг).
+            </div>
           </div>
         </div>
       </div>
