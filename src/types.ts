@@ -132,6 +132,7 @@ export interface PatientData {
   dissectionOrSurgeryTemporalLink: boolean; // Связь с диссекцией артерии или операцией на сердце/артериях (п. 13.3)
 
   // Clinical Onset & Severity
+  eventType?: 'ischemic_stroke' | 'tia'; // Ишемический инсульт (ИГМ) или ТИА
   onsetMode: OnsetCharacter; // Внезапное, ступенчатое, постепенное, флюктуирующее
   onsetTimeHours: number; // Время от начала симптомов (в часах)
   isWakeUpStroke: boolean; // Инсульт после пробуждения (инсульт во сне)
@@ -169,6 +170,7 @@ export interface PatientData {
   imagingFocusSize: 'lacunar' | 'large_territorial' | 'multifocal' | 'no_lesion' | 'other';
   infarctDiameterCm: number; // Точный максимальный размер инфаркта на КТ (см) для сроков ОАК (п. 43.1)
   infarctVolumeMl?: number; // Объем очага инфаркта (мл)
+  hemorrhagicTransformation?: 'none' | 'HI1' | 'HI2' | 'PH1' | 'PH2'; // Геморрагическая трансформация (ГИ-1, ГИ-2, ПГ-1, ПГ-2)
   isMalignantMCASuspected: boolean; // Поражение > 50% бассейна СМА, ASPECT ≤ 5 (п. 17.1)
   isMalignantCerebellarSuspected: boolean; // Поражение ≥ 1/3 полушария мозжечка, дислокация (п. 17.2)
   largeVesselOcclusionConfirmed: boolean; // Окклюзия крупной артерии (ВСА, СМА М1/М2, Основная артерия)
@@ -183,6 +185,7 @@ export interface PatientData {
   bmiValue?: number; // ИМТ (кг/м2)
   elevatedLiverEnzymesALT2x: boolean; // АЛТ > 2x ULN
   dysphagiaOrNasogastricTube: boolean; // Нарушение глотания / зонд (Приложение 6, 11)
+  daptIntolerance?: boolean; // Непереносимость двойной антиагрегантной терапии (аллергия/непереносимость АСК или ингибиторов P2Y12)
   recurrentTIAonAntiplatelets: boolean; // Рецидивирующие ТИА на фоне приема АСК/клопидогрела (п. 43.2)
   multivascularDisease: boolean; // Мультифокальный атеросклероз (ИБС + периферические артерии)
 }
@@ -240,6 +243,35 @@ export interface AntithromboticPlan {
   duration: string;
   safetyNotes: string;
   alternativeRegimen?: string;
+
+  // Exact Ministry of Health Protocol Rule Tracking
+  protocolTableType: 'non_cardioembolic' | 'cardioembolic';
+  ruleNumber: number; // Пункт таблицы (1-6 для некардиоэмболического, 1-22 для кардиоэмболического)
+  ruleTitle: string; // Заголовок пункта (например, "ИГМ <24ч, NIHSS ≤3 и ТИА высокого риска по ABCD2 ≥4")
+  ruleDescriptionRu?: string;
+  protocolCitation: string; // Ссылка на протокол (например, "Таблица антитромботической терапии при некардиоэмболическом ИГМ, п. 1")
+
+  // Phased Regimen Breakdown (Острый период -> Ранняя вторичная профилактика -> Долговременная)
+  phase1?: {
+    timing: string; // "1 сутки" или "С 1 по 14 сутки"
+    regimen: string;
+    dosing: string;
+  };
+  phase2?: {
+    timing: string; // "Со 2 суток до 21 суток" или "Со 2 суток до 30 суток"
+    regimen: string;
+    dosing: string;
+  };
+  phase3?: {
+    timing: string; // "С 22 суток" или "С 31 суток" / Пожизненно
+    regimen: string;
+    dosing: string;
+  };
+
+  // Bridge therapies
+  preOACBridge?: string; // "До начала ОАК: АСК 150–300 мг/сут (п. 8)"
+  heparinBridge?: string; // "ИГМ > 7 см: НМГ в профилактической дозе, с переводом на ОАК после 14 сут (п. 22)"
+  daptIntoleranceHandled?: boolean; // При непереносимости ДААТ
 
   // Additional protocol details
   acuteFirst24h: string; // АСК 150-300 мг или ЗАПРЕТ после ТЛТ/ВСТЭ (п. 39)

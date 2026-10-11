@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CalculationResult, PatientData } from '../types';
 import {
   Award,
@@ -22,8 +22,15 @@ import {
   Sparkles,
   Zap,
   Activity,
-  ArrowRight
+  ArrowRight,
+  ChevronDown,
+  ChevronUp,
+  Table
 } from 'lucide-react';
+import {
+  NON_CARDIOEMBOLIC_PROTOCOL_RULES,
+  CARDIOEMBOLIC_PROTOCOL_RULES
+} from '../utils/calculator';
 
 interface ResultsViewProps {
   result: CalculationResult;
@@ -40,6 +47,8 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
   onOpenReportModal,
   onSaveCase
 }) => {
+  const [showFullProtocolTable, setShowFullProtocolTable] = useState<boolean>(false);
+
   const {
     dominantSubtype,
     confidenceLevelRu,
@@ -234,66 +243,259 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
         </div>
       </div>
 
-      {/* 4. Precision Antithrombotic Plan & DOAC Selection (Item 43, App 14) */}
+      {/* 4. Precision Antithrombotic Plan & Secondary Thrombosis Prevention (Protocol MZ RB No. 1) */}
       <div className="bg-white dark:bg-slate-800/90 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/80 pb-3">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Pill className="w-4 h-4 text-blue-600" />
-            <span>Персонализированный антитромботический протокол (п. 43, Приложения 14 и 15)</span>
-          </h3>
-          <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-            {antithromboticPlan.strategy === 'OAC' ? 'Антикоагулянтная стратегия' : 'Антиагрегантная стратегия'}
-          </span>
+        {/* Section Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-700/80 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-xl text-purple-700 dark:text-purple-300">
+              <Pill className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Вторичная профилактика тромбоза (Протокол МЗ РБ № 1)
+              </h3>
+              <p className="text-xs text-slate-500">
+                {antithromboticPlan.protocolTableType === 'cardioembolic'
+                  ? 'Таблица «Антитромботическая терапия при кардиоэмболическом ИГМ» (22 пункта)'
+                  : 'Таблица «Антитромботическая терапия при некардиоэмболическом ИГМ» (6 пунктов)'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span
+              className={`text-xs px-3 py-1 rounded-full font-bold self-start sm:self-auto ${
+                antithromboticPlan.strategy === 'OAC'
+                  ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200'
+                  : 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200'
+              }`}
+            >
+              {antithromboticPlan.strategy === 'OAC' ? 'ОАК стратегия' : 'Антиагрегантная (ДААТ / моно)'}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setShowFullProtocolTable((prev) => !prev)}
+              className="text-xs px-3 py-1 rounded-full font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 transition flex items-center space-x-1 cursor-pointer"
+            >
+              <Table className="w-3.5 h-3.5" />
+              <span>{showFullProtocolTable ? 'Скрыть таблицу' : 'Таблица МЗ РБ'}</span>
+              {showFullProtocolTable ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Timing / Start Day */}
-          <div className="p-4 bg-blue-50/60 dark:bg-blue-950/20 rounded-xl border border-blue-200 dark:border-blue-900/50 space-y-2">
-            <span className="text-xs font-bold text-blue-950 dark:text-blue-300 uppercase tracking-wider block">
-              1. Срок старта / возобновления
-            </span>
-            <div className="text-base font-extrabold text-blue-900 dark:text-blue-100">
-              {antithromboticPlan.timingDay}
+        {/* Highlighted Applied Rule Banner */}
+        <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-50/80 to-indigo-50/60 dark:from-blue-950/30 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-wider rounded-md bg-blue-600 text-white shadow-xs">
+                Пункт {antithromboticPlan.ruleNumber}
+              </span>
+              <span className="text-xs font-bold text-slate-900 dark:text-white">
+                {antithromboticPlan.ruleTitle}
+              </span>
             </div>
-            <p className="text-xs text-blue-800/80 dark:text-blue-300/80 leading-relaxed">
+            <p className="text-xs text-blue-950 dark:text-blue-200">
               {antithromboticPlan.timingRationale}
             </p>
           </div>
 
-          {/* Regimen & Dosing */}
-          <div className="p-4 bg-purple-50/60 dark:bg-purple-950/20 rounded-xl border border-purple-200 dark:border-purple-900/50 space-y-2">
-            <span className="text-xs font-bold text-purple-950 dark:text-purple-300 uppercase tracking-wider block">
-              2. Препарат и режим дозирования
+          <div className="text-right shrink-0">
+            <span className="text-[11px] text-slate-500 uppercase font-semibold block">Срок назначения:</span>
+            <span className="text-sm font-black text-blue-700 dark:text-blue-300">
+              {antithromboticPlan.timingDay}
             </span>
-            <div className="text-sm font-extrabold text-purple-900 dark:text-purple-100">
-              {antithromboticPlan.primaryRegimen}
+          </div>
+        </div>
+
+        {/* Bridge Therapy Notice if applicable */}
+        {antithromboticPlan.preOACBridge && antithromboticPlan.protocolTableType === 'cardioembolic' && (
+          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 flex items-center gap-2.5 text-xs text-amber-900 dark:text-amber-200">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <div className="leading-snug">
+              <strong>Мост-терапия:</strong> {antithromboticPlan.preOACBridge}.
+              {antithromboticPlan.heparinBridge && ` ${antithromboticPlan.heparinBridge}.`}
             </div>
-            <p className="text-xs text-purple-800/80 dark:text-purple-300/80 leading-relaxed">
-              {antithromboticPlan.dosingDetails}
+          </div>
+        )}
+
+        {/* DAPT Intolerance Notice */}
+        {antithromboticPlan.daptIntoleranceHandled && (
+          <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 flex items-center gap-2.5 text-xs text-rose-900 dark:text-rose-200">
+            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+            <div>
+              <strong>Учтена непереносимость ДААТ:</strong> назначена безопасная монотерапия АСК (или клопидогрелом) по пункту 3 таблицы.
+            </div>
+          </div>
+        )}
+
+        {/* Phased Timeline Breakdown */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          {/* Phase 1 */}
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                1. Острый период (1-е сутки)
+              </span>
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+            </div>
+            <div className="text-xs font-bold text-slate-900 dark:text-white">
+              {antithromboticPlan.phase1?.regimen || 'АСК 150–300 мг'}
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400">
+              {antithromboticPlan.phase1?.dosing || antithromboticPlan.acuteFirst24h}
             </p>
           </div>
 
-          {/* Duration & Follow-up */}
-          <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 flex flex-col justify-between">
-            <div>
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider block">
-                3. Длительность и безопасность
+          {/* Phase 2 */}
+          <div className="p-3.5 bg-purple-50/50 dark:bg-purple-950/20 rounded-xl border border-purple-200 dark:border-purple-900/50 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">
+                2. Ранняя вторичная профилактика
               </span>
-              <div className="text-sm font-bold text-slate-900 dark:text-white">
-                {antithromboticPlan.duration}
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                {antithromboticPlan.safetyNotes}
-              </p>
+              <Activity className="w-3.5 h-3.5 text-purple-500" />
             </div>
+            <div className="text-xs font-bold text-purple-950 dark:text-purple-100">
+              {antithromboticPlan.phase2?.regimen || antithromboticPlan.primaryRegimen}
+            </div>
+            <p className="text-[11px] text-purple-900/80 dark:text-purple-300/80">
+              {antithromboticPlan.phase2?.dosing || antithromboticPlan.dosingDetails}
+            </p>
+          </div>
 
-            {antithromboticPlan.alternativeRegimen && (
-              <div className="text-[11px] text-slate-500 pt-1.5 border-t border-slate-200 dark:border-slate-700">
-                <strong>Альтернатива:</strong> {antithromboticPlan.alternativeRegimen}
-              </div>
-            )}
+          {/* Phase 3 */}
+          <div className="p-3.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200 dark:border-emerald-900/50 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+                3. Долговременная терапия
+              </span>
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            </div>
+            <div className="text-xs font-bold text-emerald-950 dark:text-emerald-100">
+              {antithromboticPlan.phase3?.regimen || antithromboticPlan.duration}
+            </div>
+            <p className="text-[11px] text-emerald-900/80 dark:text-emerald-300/80">
+              {antithromboticPlan.phase3?.dosing || antithromboticPlan.safetyNotes}
+            </p>
           </div>
         </div>
+
+        {/* Collapsible Complete Protocol Table View */}
+        {showFullProtocolTable && (
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <Table className="w-4 h-4 text-blue-600" />
+                <span>
+                  {antithromboticPlan.protocolTableType === 'cardioembolic'
+                    ? 'Официальная таблица: Кардиоэмболический ИГМ (МЗ РБ)'
+                    : 'Официальная таблица: Некардиоэмболический ИГМ (МЗ РБ)'}
+                </span>
+              </h4>
+              <span className="text-[11px] text-slate-500">
+                Зеленым цветом выделен пункт, примененный для данного пациента
+              </span>
+            </div>
+
+            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+              {antithromboticPlan.protocolTableType === 'cardioembolic' ? (
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                    <tr>
+                      <th className="py-2 px-3">№</th>
+                      <th className="py-2 px-3">Клиническая ситуация (размер ИГМ / NIHSS / трансформация)</th>
+                      <th className="py-2 px-3">Срок и тактика антитромботической терапии</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                    {CARDIOEMBOLIC_PROTOCOL_RULES.map((rule) => {
+                      const isCurrent = rule.ruleNumber === antithromboticPlan.ruleNumber;
+                      return (
+                        <tr
+                          key={rule.ruleNumber}
+                          className={
+                            isCurrent
+                              ? 'bg-emerald-100/70 dark:bg-emerald-950/60 font-bold text-emerald-950 dark:text-emerald-100'
+                              : 'hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                          }
+                        >
+                          <td className="py-1.5 px-3">
+                            <span
+                              className={`inline-block px-1.5 py-0.5 rounded text-[10px] ${
+                                isCurrent ? 'bg-emerald-600 text-white font-extrabold' : 'text-slate-500'
+                              }`}
+                            >
+                              {rule.ruleNumber}
+                            </span>
+                          </td>
+                          <td className="py-1.5 px-3">
+                            {rule.condition}
+                            {isCurrent && (
+                              <span className="ml-2 text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded-full uppercase">
+                                Ваш пациент
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-1.5 px-3">{rule.timingRu}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                    <tr>
+                      <th className="py-2 px-3">№</th>
+                      <th className="py-2 px-3">Клиническая ситуация</th>
+                      <th className="py-2 px-3">1 сутки / Острый период</th>
+                      <th className="py-2 px-3">Ранняя терапия</th>
+                      <th className="py-2 px-3">Долговременная терапия</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                    {NON_CARDIOEMBOLIC_PROTOCOL_RULES.map((rule) => {
+                      const isCurrent = rule.ruleNumber === antithromboticPlan.ruleNumber;
+                      return (
+                        <tr
+                          key={rule.ruleNumber}
+                          className={
+                            isCurrent
+                              ? 'bg-emerald-100/70 dark:bg-emerald-950/60 font-bold text-emerald-950 dark:text-emerald-100'
+                              : 'hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                          }
+                        >
+                          <td className="py-1.5 px-3">
+                            <span
+                              className={`inline-block px-1.5 py-0.5 rounded text-[10px] ${
+                                isCurrent ? 'bg-emerald-600 text-white font-extrabold' : 'text-slate-500'
+                              }`}
+                            >
+                              {rule.ruleNumber}
+                            </span>
+                          </td>
+                          <td className="py-1.5 px-3">
+                            {rule.condition}
+                            {isCurrent && (
+                              <span className="ml-2 text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded-full uppercase">
+                                Ваш пациент
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-1.5 px-3">{rule.regimenDay1}</td>
+                          <td className="py-1.5 px-3">{rule.regimenEarly}</td>
+                          <td className="py-1.5 px-3">{rule.regimenLongTerm}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 5. Clinical Scores Strip (ABCD2 & HAS-BLED) */}

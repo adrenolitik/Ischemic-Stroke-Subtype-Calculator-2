@@ -96,17 +96,20 @@ const DEFAULT_PATIENT_DATA: PatientData = {
   aspectScore: 8,
   imagingFocusSize: 'large_territorial',
   infarctDiameterCm: 2.5,
+  hemorrhagicTransformation: 'none',
   isMalignantMCASuspected: false,
   isMalignantCerebellarSuspected: false,
   largeVesselOcclusionConfirmed: false,
   occludedArterySegment: 'none',
 
+  eventType: 'ischemic_stroke',
   estimatedCrCl: 65,
   historyOfGIBleeding: false,
   dyspepsia: false,
   weightKg: 74,
   elevatedLiverEnzymesALT2x: false,
   dysphagiaOrNasogastricTube: false,
+  daptIntolerance: false,
   recurrentTIAonAntiplatelets: false,
   multivascularDisease: false
 };

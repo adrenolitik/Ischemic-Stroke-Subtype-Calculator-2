@@ -12,7 +12,12 @@ import {
   CheckCircle2,
   AlertTriangle
 } from 'lucide-react';
-import { TOAST_SUBTYPES_MAP, OCSP_INFO_MAP } from '../utils/calculator';
+import {
+  TOAST_SUBTYPES_MAP,
+  OCSP_INFO_MAP,
+  NON_CARDIOEMBOLIC_PROTOCOL_RULES,
+  CARDIOEMBOLIC_PROTOCOL_RULES
+} from '../utils/calculator';
 import {
   HIGH_RISK_CARDIAC_SOURCES,
   LOW_RISK_CARDIAC_SOURCES,
@@ -176,62 +181,86 @@ export const ReferenceModal: React.FC<ReferenceModalProps> = ({ isOpen, onClose 
 
           {/* TAB 3: DOAC & DAPT TABLES */}
           {activeTab === 'doac' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h3 className="text-sm font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider flex items-center gap-2">
                 <Pill className="w-4 h-4" />
-                <span>Алгоритмы выбора антитромботической терапии (Приложения 14 и 15)</span>
+                <span>Официальные протоколы вторичной профилактики тромбоза (МЗ РБ № 1 от 05.01.2026)</span>
               </h3>
 
-              <div className="space-y-3 text-xs">
-                <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <span className="font-bold text-slate-900 dark:text-white block mb-2">
-                    Сроки возобновления / старта ОАК (Таблица п. 43.1):
-                  </span>
-                  <table className="w-full text-left border-collapse">
+              {/* Table 1: Non-cardioembolic Stroke */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <span className="font-bold text-slate-900 dark:text-white block text-sm">
+                  1. Антитромботическая терапия при некардиоэмболическом ИГМ (6 пунктов):
+                </span>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="border-b text-slate-600">
-                        <th className="py-1">Срок</th>
-                        <th className="py-1">Тяжесть / Размер инфаркта</th>
-                        <th className="py-1">Условия</th>
+                      <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 bg-slate-100/60 dark:bg-slate-700/60">
+                        <th className="py-2 px-2.5">№</th>
+                        <th className="py-2 px-2.5">Клиническая ситуация</th>
+                        <th className="py-2 px-2.5">1 сутки</th>
+                        <th className="py-2 px-2.5">Ранняя терапия</th>
+                        <th className="py-2 px-2.5">Долговременная терапия</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                      <tr>
-                        <td className="py-1.5 font-bold text-blue-600">1-е сутки</td>
-                        <td>ТИА или инфаркт &lt; 1.5 см, NIHSS &lt; 8</td>
-                        <td>КТ/МРТ: нет признаков крови</td>
-                      </tr>
-                      <tr>
-                        <td className="py-1.5 font-bold text-blue-600">3-и сутки</td>
-                        <td>Очаг 1.5–3.0 см, NIHSS 8–15</td>
-                        <td>Контроль КТ перед стартом</td>
-                      </tr>
-                      <tr>
-                        <td className="py-1.5 font-bold text-blue-600">6-е сутки</td>
-                        <td>Очаг &gt; 3.0 см, NIHSS &gt; 15</td>
-                        <td>Обязательна повторная КТ</td>
-                      </tr>
-                      <tr>
-                        <td className="py-1.5 font-bold text-rose-600">10–14-е сутки</td>
-                        <td>Критический размер / геморрагическая трансформация</td>
-                        <td>Решение консилиума</td>
-                      </tr>
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700 text-slate-800 dark:text-slate-200">
+                      {NON_CARDIOEMBOLIC_PROTOCOL_RULES.map((r) => (
+                        <tr key={r.ruleNumber} className="hover:bg-slate-100/40 dark:hover:bg-slate-700/40">
+                          <td className="py-2 px-2.5 font-bold text-blue-600">{r.ruleNumber}</td>
+                          <td className="py-2 px-2.5 font-semibold">{r.condition}</td>
+                          <td className="py-2 px-2.5">{r.regimenDay1}</td>
+                          <td className="py-2 px-2.5">{r.regimenEarly}</td>
+                          <td className="py-2 px-2.5 font-medium">{r.regimenLongTerm}</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
+              </div>
 
-                <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
-                  <span className="font-bold text-slate-900 dark:text-white block">
-                    Выбор ПОАК при фибрилляции предсердий (Приложение 14):
-                  </span>
-                  <ul className="list-disc list-inside space-y-1 text-slate-700 dark:text-slate-300">
-                    <li>• <strong>CrCl 15–29 мл/мин:</strong> Апиксабан (2.5 мг 2 р/д) или Варфарин (МНО 2.0–3.0). Дабигатран противопоказан!</li>
-                    <li>• <strong>CrCl 30–49 мл/мин:</strong> Ривароксабан 15 мг 1 р/д, Дабигатран 110 мг 2 р/д, Апиксабан 2.5–5 мг 2 р/д.</li>
-                    <li>• <strong>ЖКК в анамнезе / диспепсия:</strong> Апиксабан 5 мг 2 р/д (наименьший риск ЖКК) или Дабигатран 110 мг.</li>
-                    <li>• <strong>Зондовое питание (дисфагия):</strong> Ривароксабан, Апиксабан (можно измельчать). Капсулы Дабигатрана вскрывать запрещено!</li>
-                    <li>• <strong>Масса тела &gt; 120 кг:</strong> Предпочтителен Варфарин под контролем МНО.</li>
-                  </ul>
+              {/* Table 2: Cardioembolic Stroke */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <span className="font-bold text-slate-900 dark:text-white block text-sm">
+                  2. Антитромботическая терапия при кардиоэмболическом ИГМ (22 пункта):
+                </span>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 bg-slate-100/60 dark:bg-slate-700/60">
+                        <th className="py-2 px-2.5">№</th>
+                        <th className="py-2 px-2.5">Клиническая ситуация (размер инфаркта / NIHSS / геморрагическая трансформация)</th>
+                        <th className="py-2 px-2.5">Срок начала / тактика ОАК</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700 text-slate-800 dark:text-slate-200">
+                      {CARDIOEMBOLIC_PROTOCOL_RULES.map((r) => (
+                        <tr key={r.ruleNumber} className="hover:bg-slate-100/40 dark:hover:bg-slate-700/40">
+                          <td className="py-1.5 px-2.5 font-bold text-purple-600">{r.ruleNumber}</td>
+                          <td className="py-1.5 px-2.5 font-medium">{r.condition}</td>
+                          <td className="py-1.5 px-2.5 font-bold text-slate-900 dark:text-white">{r.timingRu}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
+                <p className="text-[11px] text-slate-500 pt-1">
+                  * Пояснения: ГИ — геморрагический инфаркт (1 — петехии, 2 — сливные), ПГ — паренхиматозная гематома (1 — ≤30%, 2 — &gt;30% с масс-эффектом).
+                </p>
+              </div>
+
+              {/* Appendix 14: DOAC Criteria */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
+                <span className="font-bold text-slate-900 dark:text-white block text-sm">
+                  3. Выбор антикоагулянта при фибрилляции предсердий (Приложение 14):
+                </span>
+                <ul className="list-disc list-inside space-y-1 text-slate-700 dark:text-slate-300">
+                  <li>• <strong>Механические клапаны сердца / митральный стеноз:</strong> ПОАК строго противопоказаны! Показан только Варфарин (МНО 2.0–3.0 или 2.5–3.5 + АСК 75–100 мг).</li>
+                  <li>• <strong>CrCl 15–29 мл/мин:</strong> Апиксабан (2.5 мг 2 р/д) или Варфарин (МНО 2.0–3.0). Дабигатран противопоказан!</li>
+                  <li>• <strong>CrCl 30–49 мл/мин:</strong> Ривароксабан 15 мг 1 р/д, Дабигатран 110 мг 2 р/д, Апиксабан 2.5–5 мг 2 р/д.</li>
+                  <li>• <strong>ЖКК в анамнезе / диспепсия:</strong> Апиксабан 5 мг 2 р/д (наименьший риск ЖКК) или Дабигатран 110 мг. Избегать Дабигатран 150 мг и Ривароксабан 20 мг.</li>
+                  <li>• <strong>Зондовое питание (дисфагия):</strong> Ривароксабан, Апиксабан (можно измельчать). Капсулы Дабигатрана вскрывать запрещено!</li>
+                  <li>• <strong>Масса тела &gt; 120 кг (ИМТ &gt; 40):</strong> Предпочтителен Варфарин под контролем МНО.</li>
+                </ul>
               </div>
             </div>
           )}

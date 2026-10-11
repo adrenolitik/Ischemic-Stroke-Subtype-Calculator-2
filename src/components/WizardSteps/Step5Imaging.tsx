@@ -277,7 +277,7 @@ export const Step5Imaging: React.FC<Step5Props> = ({ data, onChange }) => {
         <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span>Размеры очага инфаркта и сроки начала антикоагулянтов (п. 12, 43.1)</span>
+            <span>Размеры очага инфаркта и сроки начала антикоагулянтов (Таблица МЗ РБ № 1)</span>
           </div>
           <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
             Диаметр: {data.infarctDiameterCm} см
@@ -285,50 +285,161 @@ export const Step5Imaging: React.FC<Step5Props> = ({ data, onChange }) => {
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
-            <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
-              Максимальный размер очага ишемии (см):
-            </label>
-            <input
-              type="number"
-              step="0.1"
-              min={0.1}
-              max={12.0}
-              value={data.infarctDiameterCm || ''}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value) || 0;
-                onChange({
-                  infarctDiameterCm: val,
-                  lacunarDiameterUnder20mm: val <= 2.0,
-                  imagingFocusSize: val <= 1.5 ? 'lacunar' : 'large_territorial'
-                });
-              }}
-              className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl font-bold"
-            />
+          <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  Максимальный размер очага ишемии (см):
+                </label>
+                <span className="text-xs font-bold text-blue-600">
+                  {data.infarctDiameterCm < 2.0
+                    ? '< 2 см'
+                    : data.infarctDiameterCm <= 5.0
+                    ? '2–5 см'
+                    : data.infarctDiameterCm <= 7.0
+                    ? '5–7 см'
+                    : '> 7 см'}
+                </span>
+              </div>
+              <input
+                id="infarct-diameter-input"
+                type="number"
+                step="0.1"
+                min={0.1}
+                max={15.0}
+                value={data.infarctDiameterCm || ''}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value) || 0;
+                  onChange({
+                    infarctDiameterCm: val,
+                    lacunarDiameterUnder20mm: val <= 2.0,
+                    imagingFocusSize: val <= 1.5 ? 'lacunar' : 'large_territorial'
+                  });
+                }}
+                className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl font-bold"
+              />
+            </div>
 
-            <div className="text-[11px] text-slate-500 space-y-1">
-              <div>• &le; 1.5 см (&le; 2.0 см на МРТ) — лакунарный очаг (п. 12.3)</div>
-              <div>• 1.5–3.0 см — инфаркт средней величины (старт ОАК на 3-и сутки)</div>
-              <div>• &gt; 3.0 см — крупный инфаркт (старт ОАК на 6-е сутки) (п. 43.1)</div>
+            {/* Quick Presets matching official table categories */}
+            <div className="space-y-1">
+              <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider block">
+                Категории протокола:
+              </span>
+              <div className="grid grid-cols-4 gap-1.5">
+                {[
+                  { label: '< 2 см', val: 1.5 },
+                  { label: '2–5 см', val: 3.5 },
+                  { label: '5–7 см', val: 6.0 },
+                  { label: '> 7 см', val: 8.0 }
+                ].map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() =>
+                      onChange({
+                        infarctDiameterCm: preset.val,
+                        lacunarDiameterUnder20mm: preset.val <= 2.0,
+                        imagingFocusSize: preset.val <= 1.5 ? 'lacunar' : 'large_territorial'
+                      })
+                    }
+                    className={`px-2 py-1.5 text-xs font-bold rounded-lg border text-center transition ${
+                      (preset.val === 1.5 && data.infarctDiameterCm < 2.0) ||
+                      (preset.val === 3.5 && data.infarctDiameterCm >= 2.0 && data.infarctDiameterCm <= 5.0) ||
+                      (preset.val === 6.0 && data.infarctDiameterCm > 5.0 && data.infarctDiameterCm <= 7.0) ||
+                      (preset.val === 8.0 && data.infarctDiameterCm > 7.0)
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="text-[11px] text-slate-500 space-y-0.5 pt-1">
+              <div>• &lt; 2 см: ОАК со 2-х суток (п. 1)</div>
+              <div>• 2–5 см: со 2-х суток (&lt;8 б.), с 3-х (8–15 б.), с 6-х (&gt;15 б.) (п. 2–4)</div>
+              <div>• 5–7 см: с 4-х суток (&lt;8 б.), с 5-х (8–15 б.), с 10-х (&gt;15 б.) (п. 5–7)</div>
+              <div>• &gt; 7 см: НМГ в проф. дозе, ОАК после 14 сут (п. 22)</div>
             </div>
           </div>
 
-          {/* OAC Start Rule Preview */}
-          <div className="p-3.5 bg-blue-50/60 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-900/50 flex flex-col justify-between text-xs">
+          {/* Hemorrhagic Transformation (ECASS) Selector */}
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col justify-between space-y-3">
             <div>
-              <span className="font-bold text-blue-950 dark:text-blue-200 block mb-1">
-                Таблица сроков возобновления / назначения ОАК (п. 43.1 Протокола МЗ РБ № 1):
-              </span>
-              <ul className="text-[11px] text-blue-900 dark:text-blue-300 space-y-1">
-                <li>• <strong>1-е сутки:</strong> ТИА или инфаркт &lt; 1.5 см при NIHSS &lt; 8</li>
-                <li>• <strong>3-и сутки:</strong> Инфаркт 1.5–3 см при NIHSS 8–15</li>
-                <li>• <strong>6-е сутки:</strong> Инфаркт &gt; 3 см при NIHSS &gt; 15</li>
-                <li>• <strong>10–14-е сутки:</strong> Критический размер, геморрагическая трансформация</li>
-              </ul>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                  Геморрагическая трансформация инфаркта:
+                </label>
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                  (data.hemorrhagicTransformation || 'none') === 'none'
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200'
+                    : 'bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200'
+                }`}>
+                  {data.hemorrhagicTransformation === 'HI1' && 'ГИ-1'}
+                  {data.hemorrhagicTransformation === 'HI2' && 'ГИ-2'}
+                  {data.hemorrhagicTransformation === 'PH1' && 'ПГ-1'}
+                  {data.hemorrhagicTransformation === 'PH2' && 'ПГ-2'}
+                  {(!data.hemorrhagicTransformation || data.hemorrhagicTransformation === 'none') && 'Нет крови'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 mb-2">
+                Классификация ECASS для кардиоэмболического инсульта (пункты 10–21 Таблицы МЗ РБ)
+              </p>
+
+              <div className="space-y-1.5">
+                {[
+                  {
+                    key: 'none',
+                    label: 'Нет геморрагической трансформации',
+                    desc: 'Стандартные сроки назначения ОАК (п. 1–7)'
+                  },
+                  {
+                    key: 'HI1',
+                    label: 'ГИ-1 (Геморрагический инфаркт 1 типа)',
+                    desc: 'Мелкие петехии по краям инфаркта (п. 10–12)'
+                  },
+                  {
+                    key: 'HI2',
+                    label: 'ГИ-2 (Геморрагический инфаркт 2 типа)',
+                    desc: 'Сливные петехии в зоне инфаркта без масс-эффекта (п. 13–15)'
+                  },
+                  {
+                    key: 'PH1',
+                    label: 'ПГ-1 (Паренхиматозная гематома 1 типа)',
+                    desc: 'Гематома ≤ 30% зоны инфаркта с легким масс-эффектом (п. 16–18)'
+                  },
+                  {
+                    key: 'PH2',
+                    label: 'ПГ-2 (Паренхиматозная гематома 2 типа)',
+                    desc: 'Гематома > 30% зоны инфаркта с выраженным масс-эффектом (п. 19–21)'
+                  }
+                ].map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => onChange({ hemorrhagicTransformation: item.key as any })}
+                    className={`w-full text-left p-2 rounded-lg border text-xs transition flex items-start justify-between ${
+                      (data.hemorrhagicTransformation || 'none') === item.key
+                        ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800 text-rose-950 dark:text-rose-200'
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div>
+                      <div className="font-bold">{item.label}</div>
+                      <div className="text-[10px] opacity-75">{item.desc}</div>
+                    </div>
+                    {(data.hemorrhagicTransformation || 'none') === item.key && (
+                      <span className="text-rose-600 font-bold ml-1">✓</span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="pt-2 border-t border-blue-200 dark:border-blue-900/60 mt-2 font-semibold text-[11px] text-blue-800 dark:text-blue-200">
-              Перед стартом ОАК обязательна контрольная КТ/МРТ для исключения геморрагической трансформации!
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-700 text-[11px] text-slate-500">
+              По п. 8: До начала ОАК обязателен прием АСК 150–300 мг/сут.
             </div>
           </div>
         </div>

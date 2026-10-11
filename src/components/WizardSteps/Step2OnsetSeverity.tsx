@@ -66,6 +66,44 @@ export const Step2OnsetSeverity: React.FC<Step2Props> = ({
 
   return (
     <div className="space-y-6">
+      {/* Event Type: Ischemic Stroke vs TIA */}
+      <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+            Нозологическая форма острого нарушения мозгового кровообращения:
+          </label>
+          <span className="text-[11px] text-slate-500">
+            Определяет выбор протокола вторичной профилактики (Таблицы МЗ РБ для ИГМ и ТИА)
+          </span>
+        </div>
+        <div className="flex items-center space-x-1.5 p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
+          <button
+            type="button"
+            id="event-type-stroke-btn"
+            onClick={() => onChange({ eventType: 'ischemic_stroke' })}
+            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+              (data.eventType || 'ischemic_stroke') === 'ischemic_stroke'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            Инфаркт мозга (ИГМ)
+          </button>
+          <button
+            type="button"
+            id="event-type-tia-btn"
+            onClick={() => onChange({ eventType: 'tia' })}
+            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+              data.eventType === 'tia'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            ТИА (ABCD² стратификация)
+          </button>
+        </div>
+      </div>
+
       {/* Time Window & Wake-Up Stroke */}
       <div className="bg-white dark:bg-slate-800/80 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
         <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">

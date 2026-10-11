@@ -345,6 +345,19 @@ export const Step1Demographics: React.FC<Step1Props> = ({ data, onChange }) => {
                 Зондовое питание (Дабигатран нельзя измельчать!)
               </span>
             </label>
+
+            <label className="flex items-center space-x-2 text-xs cursor-pointer pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+              <input
+                id="dapt-intolerance-checkbox"
+                type="checkbox"
+                checked={data.daptIntolerance || false}
+                onChange={(e) => onChange({ daptIntolerance: e.target.checked })}
+                className="rounded text-rose-600 focus:ring-rose-500"
+              />
+              <span className="text-rose-700 dark:text-rose-300 font-medium">
+                Непереносимость ДААТ (аллергия, язвенное кровотечение, непереносимость клопидогрела/тикагрелора — п. 3)
+              </span>
+            </label>
           </div>
         </div>
       </div>

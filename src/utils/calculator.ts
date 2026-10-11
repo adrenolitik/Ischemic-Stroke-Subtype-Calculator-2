@@ -475,13 +475,95 @@ export function evaluateMalignantStroke(data: PatientData): MalignantStrokeAlert
 }
 
 /**
- * Calculates Antithrombotic Plan & Exact OAC Timing according to items 39, 42, 43.1, 43.2, 43.3 and Appendix 14
+ * Official Reference Data for Secondary Thrombosis Prevention Tables
+ * (Clinical Protocol of the Ministry of Health of the Republic of Belarus No. 1 of 05.01.2026)
+ */
+export const NON_CARDIOEMBOLIC_PROTOCOL_RULES = [
+  {
+    ruleNumber: 1,
+    condition: 'ИГМ <24ч, NIHSS ≤3 и ТИА высокого риска по ABCD2 ≥4',
+    regimenDay1: '1 сутки: клопидогрел 300 мг/сут + АСК 300 мг/сут',
+    regimenEarly: 'Со 2 суток до 21 суток: клопидогрел 75 мг/сут + АСК 75 мг/сут',
+    regimenLongTerm: 'С 22 суток: монотерапия АСК 75 мг/сут или клопидогрел 75 мг/сут'
+  },
+  {
+    ruleNumber: 2,
+    condition: 'ИГМ <24ч, NIHSS ≤5 и ТИА высокого риска по ABCD2 ≥6',
+    regimenDay1: '1 сутки: Тикагрелор 180 мг/сут + АСК 300 мг/сут',
+    regimenEarly: 'Со 2 суток до 30 суток: тикагрелор 90 мг х 2 р/сут + АСК 75 мг/сут',
+    regimenLongTerm: 'С 31 суток: монотерапия АСК 75–150 мг/сут или клопидогрел 75 мг/сут'
+  },
+  {
+    ruleNumber: 3,
+    condition: 'ИГМ NIHSS ≤3, ТИА при непереносимости двойной антиагрегантной терапии',
+    regimenDay1: 'С 1 суток до 14 суток: АСК 300 мг/сут',
+    regimenEarly: 'С 1 по 14 сутки: АСК 300 мг/сут',
+    regimenLongTerm: 'С 15 суток и далее монотерапия: АСК 75 мг/сут или клопидогрел 75 мг/сут'
+  },
+  {
+    ruleNumber: 4,
+    condition: 'ИГМ <24ч, NIHSS ≥6',
+    regimenDay1: 'С 1 по 14 сутки: АСК 150–300 мг/сут ИЛИ 1 сутки: клопидогрел 300 мг/сут',
+    regimenEarly: 'Со 2 суток: клопидогрел 75 мг/сут (или продолжение АСК 150–300 мг/сут до 14 суток)',
+    regimenLongTerm: 'С 15 суток: АСК 75 мг/сут ИЛИ клопидогрел 75 мг/сут'
+  },
+  {
+    ruleNumber: 5,
+    condition: 'ИГМ 24–72ч, NIHSS ≤5 и ТИА высокого риска по ABCD2 ≥4',
+    regimenDay1: 'До 21 суток: клопидогрел 75 мг/сут + АСК 75 мг/сут (без нагрузочной дозы)',
+    regimenEarly: 'До 21 суток: клопидогрел 75 мг/сут + АСК 75 мг/сут',
+    regimenLongTerm: 'С 22 суток: монотерапия АСК 75 мг/сут или клопидогрел 75 мг/сут'
+  },
+  {
+    ruleNumber: 6,
+    condition: 'ИГМ не соответствует 5 пункту (>72ч или NIHSS >5 при поступлении >24ч)',
+    regimenDay1: 'Монотерапия АСК 75 мг/сут или клопидогрел 75 мг/сут',
+    regimenEarly: 'Монотерапия АСК 75 мг/сут или клопидогрел 75 мг/сут',
+    regimenLongTerm: 'Пожизненная монотерапия АСК 75 мг/сут или клопидогрел 75 мг/сут'
+  }
+];
+
+export const CARDIOEMBOLIC_PROTOCOL_RULES = [
+  { ruleNumber: 1, condition: 'ИГМ <2 см', timingRu: 'ОАК со 2 суток' },
+  { ruleNumber: 2, condition: 'ИГМ 2–5 см, NIHSS <8', timingRu: 'ОАК со 2 суток' },
+  { ruleNumber: 3, condition: 'ИГМ 2–5 см, NIHSS 8–15', timingRu: 'ОАК с 3 суток' },
+  { ruleNumber: 4, condition: 'ИГМ 2–5 см, NIHSS >15', timingRu: 'ОАК с 6 суток' },
+  { ruleNumber: 5, condition: 'ИГМ 5–7 см, NIHSS <8', timingRu: 'ОАК с 4 суток' },
+  { ruleNumber: 6, condition: 'ИГМ 5–7 см, NIHSS 8–15', timingRu: 'ОАК с 5 суток' },
+  { ruleNumber: 7, condition: 'ИГМ 5–7 см, NIHSS >15', timingRu: 'ОАК с 10 суток' },
+  { ruleNumber: 8, condition: 'До начала ОАК', timingRu: 'АСК 150–300 мг/сут' },
+  { ruleNumber: 9, condition: 'ТИА', timingRu: 'ОАК с 1 суток' },
+  { ruleNumber: 10, condition: 'ГИ-1 + ИГМ <2 см', timingRu: 'ОАК со 2 суток' },
+  { ruleNumber: 11, condition: 'ГИ-1 + ИГМ 2–5 см', timingRu: 'ОАК с 7-х суток' },
+  { ruleNumber: 12, condition: 'ГИ-1 + ИГМ >5 см', timingRu: 'ОАК с 14-х суток' },
+  { ruleNumber: 13, condition: 'ГИ-2 + ИГМ <2 см', timingRu: 'ОАК со 2 суток' },
+  { ruleNumber: 14, condition: 'ГИ-2 + ИГМ 2–5 см', timingRu: 'ОАК с 14-х суток' },
+  { ruleNumber: 15, condition: 'ГИ-2 + ИГМ >5 см', timingRu: 'ОАК с 21-х суток' },
+  { ruleNumber: 16, condition: 'ПГ-1 + ИГМ <2 см', timingRu: 'ОАК со 2 суток' },
+  { ruleNumber: 17, condition: 'ПГ-1 + ИГМ 2–5 см', timingRu: 'ОАК с 21-х суток' },
+  { ruleNumber: 18, condition: 'ПГ-1 + ИГМ >5 см', timingRu: 'ОАК с 28-х суток' },
+  { ruleNumber: 19, condition: 'ПГ-2 + ИГМ <2 см', timingRu: 'ОАК со 2 суток' },
+  { ruleNumber: 20, condition: 'ПГ-2 + ИГМ 2–5 см', timingRu: 'ОАК с 28-х суток' },
+  { ruleNumber: 21, condition: 'ПГ-2 + ИГМ >5 см', timingRu: 'ОАК с 30-х суток' },
+  { ruleNumber: 22, condition: 'ИГМ >7 см', timingRu: 'НМГ в профилактической дозе, с переводом на ОАК после 14 сут' }
+];
+
+/**
+ * Calculates Antithrombotic Plan & Exact Timing according to the Official Protocols:
+ * - Table 1: Non-cardioembolic Ischemic Stroke (items 1–6)
+ * - Table 2: Cardioembolic Ischemic Stroke (items 1–22)
+ * - Items 39, 42.1, 43.1, 43.2 and Appendix 14
  */
 export function calculateAntithromboticPlan(
   data: PatientData,
   dominantSubtype: ToastSubtypeKey,
   reperfusionPerformed: boolean
 ): AntithromboticPlan {
+  const isTIA = data.eventType === 'tia';
+  const abcd2 = calculateABCD2(data).score;
+  const diam = data.infarctDiameterCm || (data.imagingFocusSize === 'lacunar' ? 1.5 : 3.0);
+  const ht = data.hemorrhagicTransformation || 'none';
+
   // Acute first 24h rule (item 39 & 42.1)
   let acuteFirst24h = '';
   if (reperfusionPerformed) {
@@ -492,62 +574,153 @@ export function calculateAntithromboticPlan(
       'В первые 24 часа от развития симптомов: Ацетилсалициловая кислота (АСК) 150–300 мг внутрь (или через зонд при дисфагии) однократно (п. 42.1).';
   }
 
-  // Non-cardioembolic vs Cardioembolic branch
+  // =========================================================================
+  // BRANCH 1: CARDIOEMBOLIC ISCHEMIC STROKE (TABLE 2, ITEMS 1-22)
+  // =========================================================================
   if (dominantSubtype === 'cardioembolic') {
-    // Determine exact OAC start day according to item 43.1 table:
-    // Diameter < 2 cm -> Day 2
-    // Diameter 2-5 cm -> NIHSS < 8 (Day 2), NIHSS 8-15 (Day 3), NIHSS > 15 (Day 6)
-    // Diameter 5-7 cm -> NIHSS < 8 (Day 4), NIHSS 8-15 (Day 5), NIHSS > 15 (Day 10)
-    // Diameter > 7 cm -> delay, repeat CT/MRI (Day 10-14)
-    let recommendedStartDay = 'Со 2-х суток';
-    let ruleExplanation = '';
-    const diam = data.infarctDiameterCm || (data.imagingFocusSize === 'lacunar' ? 1.5 : 3.5);
+    let ruleNumber = 1;
+    let ruleTitle = '';
+    let recommendedStartDay = '';
+    let timingRationale = '';
+    let preOACBridge = 'До начала ОАК: АСК 150–300 мг/сут (п. 8 Протокола)';
+    let heparinBridge: string | undefined = undefined;
 
-    if (diam < 2.0) {
-      recommendedStartDay = 'Со 2-х суток от развития ИИ';
-      ruleExplanation =
-        'Размер очага < 2 см на КТ/МРТ: возобновление/старт ОАК рекомендовано со 2-х суток от развития ИИ независимо от NIHSS (п. 43.1).';
-    } else if (diam >= 2.0 && diam < 5.0) {
-      if (data.nihssScore < 8) {
-        recommendedStartDay = 'Со 2-х суток от развития ИИ';
-        ruleExplanation =
-          'Размер очага 2–5 см при легком инсульте (NIHSS < 8): старт ОАК со 2-х суток (п. 43.1).';
-      } else if (data.nihssScore <= 15) {
-        recommendedStartDay = 'С 3-х суток от развития ИИ';
-        ruleExplanation =
-          'Размер очага 2–5 см при инсульте средней тяжести (NIHSS 8–15): старт ОАК с 3-х суток (п. 43.1).';
+    if (isTIA) {
+      // Rule 9: ТИА -> ОАК с 1 суток
+      ruleNumber = 9;
+      ruleTitle = 'ТИА (п. 9)';
+      recommendedStartDay = 'ОАК с 1 суток';
+      timingRationale = 'При ТИА риск геморрагической трансформации минимален: старт ОАК непосредственно с 1-х суток.';
+      preOACBridge = 'Прием ОАК начинается с 1-х суток (мост-терапия АСК не требуется)';
+    } else if (diam > 7.0) {
+      // Rule 22: ИГМ >7 см
+      ruleNumber = 22;
+      ruleTitle = 'ИГМ >7 см (п. 22)';
+      recommendedStartDay = 'После 14 суток (с переводом с НМГ)';
+      timingRationale =
+        'Обширный инфаркт мозга (> 7 см): критический риск геморрагической трансформации. Показан НМГ в профилактической дозе с последующим переводом на ОАК после 14 суток.';
+      heparinBridge = 'НМГ в профилактической дозе, с переводом на ОАК после 14 суток (п. 22)';
+    } else if (ht === 'HI1') {
+      // Rules 10, 11, 12
+      if (diam < 2.0) {
+        ruleNumber = 10;
+        ruleTitle = 'ГИ-1 + ИГМ <2 см (п. 10)';
+        recommendedStartDay = 'ОАК со 2 суток';
+        timingRationale = 'Геморрагический инфаркт 1 типа при малом очаге (< 2 см): старт ОАК со 2-х суток.';
+      } else if (diam <= 5.0) {
+        ruleNumber = 11;
+        ruleTitle = 'ГИ-1 + ИГМ 2–5 см (п. 11)';
+        recommendedStartDay = 'ОАК с 7-х суток';
+        timingRationale = 'Геморрагический инфаркт 1 типа при очаге 2–5 см: старт ОАК с 7-х суток после контрольной КТ.';
       } else {
-        recommendedStartDay = 'С 6-х суток от развития ИИ';
-        ruleExplanation =
-          'Размер очага 2–5 см при тяжелом инсульте (NIHSS > 15): старт ОАК с 6-х суток после контроля КТ (п. 43.1).';
+        ruleNumber = 12;
+        ruleTitle = 'ГИ-1 + ИГМ >5 см (п. 12)';
+        recommendedStartDay = 'ОАК с 14-х суток';
+        timingRationale = 'Геморрагический инфаркт 1 типа при очаге > 5 см: старт ОАК с 14-х суток после контрольной КТ.';
       }
-    } else if (diam >= 5.0 && diam <= 7.0) {
-      if (data.nihssScore < 8) {
-        recommendedStartDay = 'С 4-х суток от развития ИИ';
-        ruleExplanation =
-          'Размер очага 5–7 см при легком инсульте (NIHSS < 8): старт ОАК с 4-х суток (п. 43.1).';
-      } else if (data.nihssScore <= 15) {
-        recommendedStartDay = 'С 5-х суток от развития ИИ';
-        ruleExplanation =
-          'Размер очага 5–7 см при инсульте средней тяжести (NIHSS 8–15): старт ОАК с 5-х суток (п. 43.1).';
+    } else if (ht === 'HI2') {
+      // Rules 13, 14, 15
+      if (diam < 2.0) {
+        ruleNumber = 13;
+        ruleTitle = 'ГИ-2 + ИГМ <2 см (п. 13)';
+        recommendedStartDay = 'ОАК со 2 суток';
+        timingRationale = 'Геморрагический инфаркт 2 типа при малом очаге (< 2 см): старт ОАК со 2-х суток.';
+      } else if (diam <= 5.0) {
+        ruleNumber = 14;
+        ruleTitle = 'ГИ-2 + ИГМ 2–5 см (п. 14)';
+        recommendedStartDay = 'ОАК с 14-х суток';
+        timingRationale = 'Геморрагический инфаркт 2 типа при очаге 2–5 см: старт ОАК с 14-х суток после контрольной КТ.';
       } else {
-        recommendedStartDay = 'С 10-х суток от развития ИИ';
-        ruleExplanation =
-          'Размер очага 5–7 см при тяжелом инсульте (NIHSS > 15): старт ОАК с 10-х суток после обязательной контрольной КТ/МРТ (п. 43.1).';
+        ruleNumber = 15;
+        ruleTitle = 'ГИ-2 + ИГМ >5 см (п. 15)';
+        recommendedStartDay = 'ОАК с 21-х суток';
+        timingRationale = 'Геморрагический инфаркт 2 типа при очаге > 5 см: старт ОАК с 21-х суток после контрольной КТ.';
+      }
+    } else if (ht === 'PH1') {
+      // Rules 16, 17, 18
+      if (diam < 2.0) {
+        ruleNumber = 16;
+        ruleTitle = 'ПГ-1 + ИГМ <2 см (п. 16)';
+        recommendedStartDay = 'ОАК со 2 суток';
+        timingRationale = 'Паренхиматозная гематома 1 типа при малом очаге (< 2 см): старт ОАК со 2-х суток.';
+      } else if (diam <= 5.0) {
+        ruleNumber = 17;
+        ruleTitle = 'ПГ-1 + ИГМ 2–5 см (п. 17)';
+        recommendedStartDay = 'ОАК с 21-х суток';
+        timingRationale = 'Паренхиматозная гематома 1 типа при очаге 2–5 см: старт ОАК с 21-х суток после контрольной КТ.';
+      } else {
+        ruleNumber = 18;
+        ruleTitle = 'ПГ-1 + ИГМ >5 см (п. 18)';
+        recommendedStartDay = 'ОАК с 28-х суток';
+        timingRationale = 'Паренхиматозная гематома 1 типа при очаге > 5 см: старт ОАК с 28-х суток после контрольной КТ.';
+      }
+    } else if (ht === 'PH2') {
+      // Rules 19, 20, 21
+      if (diam < 2.0) {
+        ruleNumber = 19;
+        ruleTitle = 'ПГ-2 + ИГМ <2 см (п. 19)';
+        recommendedStartDay = 'ОАК со 2 суток';
+        timingRationale = 'Паренхиматозная гематома 2 типа при малом очаге (< 2 см): старт ОАК со 2-х суток.';
+      } else if (diam <= 5.0) {
+        ruleNumber = 20;
+        ruleTitle = 'ПГ-2 + ИГМ 2–5 см (п. 20)';
+        recommendedStartDay = 'ОАК с 28-х суток';
+        timingRationale = 'Паренхиматозная гематома 2 типа при очаге 2–5 см: старт ОАК с 28-х суток после контрольной КТ.';
+      } else {
+        ruleNumber = 21;
+        ruleTitle = 'ПГ-2 + ИГМ >5 см (п. 21)';
+        recommendedStartDay = 'ОАК с 30-х суток';
+        timingRationale = 'Паренхиматозная гематома 2 типа при очаге > 5 см: старт ОАК с 30-х суток после контрольной КТ.';
       }
     } else {
-      recommendedStartDay = 'С 10–14 суток от развития ИИ';
-      ruleExplanation =
-        'Обширный очаг > 7 см: высокий риск геморрагической трансформации. Старт ОАК отсрочить до 10–14 суток после контрольной КТ головного мозга (п. 43.1).';
+      // Without hemorrhagic transformation: Rules 1, 2, 3, 4, 5, 6, 7
+      if (diam < 2.0) {
+        ruleNumber = 1;
+        ruleTitle = 'ИГМ <2 см (п. 1)';
+        recommendedStartDay = 'ОАК со 2 суток';
+        timingRationale = 'Размер очага < 2 см на КТ/МРТ: возобновление/старт ОАК со 2-х суток от развития ИИ.';
+      } else if (diam <= 5.0) {
+        if (data.nihssScore < 8) {
+          ruleNumber = 2;
+          ruleTitle = 'ИГМ 2–5 см, NIHSS <8 (п. 2)';
+          recommendedStartDay = 'ОАК со 2 суток';
+          timingRationale = 'Размер очага 2–5 см при легком инсульте (NIHSS < 8): старт ОАК со 2-х суток.';
+        } else if (data.nihssScore <= 15) {
+          ruleNumber = 3;
+          ruleTitle = 'ИГМ 2–5 см, NIHSS 8–15 (п. 3)';
+          recommendedStartDay = 'ОАК с 3 суток';
+          timingRationale = 'Размер очага 2–5 см при инсульте средней тяжести (NIHSS 8–15): старт ОАК с 3 суток.';
+        } else {
+          ruleNumber = 4;
+          ruleTitle = 'ИГМ 2–5 см, NIHSS >15 (п. 4)';
+          recommendedStartDay = 'ОАК с 6 суток';
+          timingRationale = 'Размер очага 2–5 см при тяжелом инсульте (NIHSS > 15): старт ОАК с 6 суток.';
+        }
+      } else {
+        // 5–7 cm
+        if (data.nihssScore < 8) {
+          ruleNumber = 5;
+          ruleTitle = 'ИГМ 5–7 см, NIHSS <8 (п. 5)';
+          recommendedStartDay = 'ОАК с 4 суток';
+          timingRationale = 'Размер очага 5–7 см при легком инсульте (NIHSS < 8): старт ОАК с 4 суток.';
+        } else if (data.nihssScore <= 15) {
+          ruleNumber = 6;
+          ruleTitle = 'ИГМ 5–7 см, NIHSS 8–15 (п. 6)';
+          recommendedStartDay = 'ОАК с 5 суток';
+          timingRationale = 'Размер очага 5–7 см при инсульте средней тяжести (NIHSS 8–15): старт ОАК с 5 суток.';
+        } else {
+          ruleNumber = 7;
+          ruleTitle = 'ИГМ 5–7 см, NIHSS >15 (п. 7)';
+          recommendedStartDay = 'ОАК с 10 суток';
+          timingRationale = 'Размер очага 5–7 см при тяжелом инсульте (NIHSS > 15): старт ОАК с 10 суток.';
+        }
+      }
     }
 
-    ruleExplanation +=
-      ' До момента начала приема ОАК пациенту назначается АСК 150–300 мг/сут (п. 43.1). Контроль АД строго < 180/120 мм рт.ст.!';
-
     // Drug selection according to Appendix 14
-    let drugChoice = 'Апиксабан 5 мг 2 раза/сут (или 2.5 мг 2 р/сут при CrCl 15-29 или ≥2 критериях ABC)';
+    let drugChoice = 'Апиксабан 5 мг 2 раза/сут (или 2.5 мг 2 р/сут при снижении почечной функции)';
     let drugChoiceRationale =
-      'ПОАК первого выбора у большинства пациентов с неклапанной ФП (Приложение 14).';
+      'ПОАК первого выбора у пациентов с неклапанной фибрилляцией предсердий (Приложение 14).';
 
     const hasMechanicalValveOrMS =
       data.highRiskCardiacSources.includes('prosthetic_valve') ||
@@ -562,15 +735,15 @@ export function calculateAntithromboticPlan(
       drugChoice =
         'Апиксабан 2.5 мг 2 раза в сутки (при CrCl 15–29 мл/мин) ИЛИ Варфарин (целевое МНО 2.0–3.0)';
       drugChoiceRationale =
-        'Тяжелая почечная недостаточность (CrCl < 30 мл/мин): Дабигатран категорически противопоказан (выводится почками на 80%). Апиксабан имеет наименьшую почечную экскрецию (27%) (Приложение 14).';
+        'Тяжелая почечная недостаточность (CrCl < 30 мл/мин): Дабигатран противопоказан (почечный клиренс 80%). Апиксабан имеет минимальную почечную экскрецию (27%) (Приложение 14).';
     } else if (data.historyOfGIBleeding) {
       drugChoice = 'Апиксабан 5 мг 2 р/сут ИЛИ Дабигатран 110 мг 2 р/сут ИЛИ Варфарин';
       drugChoiceRationale =
-        'ЖКК в анамнезе: избегать Дабигатран 150 мг и Ривароксабан 20 мг (повышенный риск повторных желудочно-кишечных кровотечений) (Приложение 14).';
+        'ЖКК в анамнезе: избегать Дабигатран 150 мг и Ривароксабан 20 мг (повышенный риск ЖК-кровотечений) (Приложение 14).';
     } else if (data.weightKg > 120 || (data.bmiValue && data.bmiValue > 40)) {
       drugChoice = 'Варфарин (целевое МНО 2.0–3.0) под контролем лабораторного титрования';
       drugChoiceRationale =
-        'Масса тела > 120 кг или ИМТ > 40 кг/м²: сниженная доказательная база по фармакокинетике ПОАК при морбидном ожирении (Приложение 14).';
+        'Масса тела > 120 кг или ИМТ > 40 кг/м²: сниженная доказательная база по ПОАК при морбидном ожирении (Приложение 14).';
     } else if (data.dysphagiaOrNasogastricTube) {
       drugChoice =
         'Апиксабан (таблетку можно измельчить и ввести через зонд) ИЛИ Ривароксабан (измельчить с энтеральным питанием)';
@@ -585,20 +758,42 @@ export function calculateAntithromboticPlan(
     return {
       strategy: 'OAC',
       timingDay: recommendedStartDay,
-      timingRationale: ruleExplanation,
+      timingRationale,
       primaryRegimen: drugChoice,
       dosingDetails: drugChoiceRationale,
       duration: 'Пожизненный прием ОАК (неопределенно долго)',
       safetyNotes:
         'Контроль функции почек (CrCl), печеночных проб и коагулограммы. При CrCl < 30 мл/мин — коррекция дозы ПОАК или Варфарин.',
       alternativeRegimen:
-        'Варфарин (целевое МНО 2.0–3.0) при механических протезах клапанов или митральном стенозе сред./тяж. степени.',
+        'Варфарин (целевое МНО 2.0–3.0) при механических протезах клапанов или митральном стенозе.',
+      protocolTableType: 'cardioembolic',
+      ruleNumber,
+      ruleTitle,
+      ruleDescriptionRu: `Таблица: Кардиоэмболический ИГМ | Пункт ${ruleNumber}: ${ruleTitle} → ${recommendedStartDay}`,
+      protocolCitation: `Таблица «Антитромботическая терапия при кардиоэмболическом ИГМ», п. ${ruleNumber}`,
+      preOACBridge,
+      heparinBridge,
       acuteFirst24h,
       secondaryPreventionCategory: 'cardioembolic',
-      regimenSummaryRu: `Кардиоэмболический подтип: пероральная антикоагулянтная терапия (ОАК). Рекомендуемый старт: ${recommendedStartDay}.`,
+      regimenSummaryRu: `Кардиоэмболический подтип: ${ruleTitle} → ${recommendedStartDay}. ${preOACBridge}. Препарат: ${drugChoice}.`,
+      phase1: {
+        timing: 'До старта ОАК (острая фаза)',
+        regimen: heparinBridge ? 'Гепариновый мост / АСК' : 'АСК',
+        dosing: heparinBridge || 'АСК 150–300 мг/сут (п. 8)'
+      },
+      phase2: {
+        timing: recommendedStartDay,
+        regimen: 'Пероральный антикоагулянт (ПОАК / Варфарин)',
+        dosing: drugChoice
+      },
+      phase3: {
+        timing: 'Долговременная профилактика',
+        regimen: 'ОАК монотерапия',
+        dosing: 'Пожизненный прием (одновременный прием АСК запрещен, за исключением механических клапанов)'
+      },
       oacPlan: {
         recommendedStartDay,
-        ruleExplanation,
+        ruleExplanation: timingRationale,
         drugChoice,
         drugChoiceRationale,
         crclWarning:
@@ -609,121 +804,274 @@ export function calculateAntithromboticPlan(
     };
   }
 
-  // Rare / Dissection
+  // =========================================================================
+  // BRANCH 2: NON-CARDIOEMBOLIC ISCHEMIC STROKE (TABLE 1, ITEMS 1-6)
+  // (Atherothrombotic, Lacunar, Undetermined / ESUS, and Non-cardioembolic Other)
+  // =========================================================================
+
+  // Handle DAPT Intolerance (Rule 3)
+  if (data.daptIntolerance && (isTIA || data.nihssScore <= 3)) {
+    return {
+      strategy: 'antiplatelet',
+      timingDay: 'С первых суток',
+      timingRationale: 'Непереносимость двойной антиагрегантной терапии (п. 3 Протокола)',
+      primaryRegimen: 'АСК монотерапия (с 1 по 14 сутки: 300 мг/сут; с 15 суток: 75 мг/сут)',
+      dosingDetails: 'С 1 суток до 14 суток: АСК 300 мг/сут. С 15 суток и далее: АСК 75 мг/сут (или клопидогрел 75 мг/сут).',
+      duration: 'Пожизненно',
+      safetyNotes: 'Контроль переносимости, при язвенной болезни / гастропатии — ИПП (пантопразол) или монотерапия клопидогрелом.',
+      alternativeRegimen: 'Клопидогрел 75 мг/сут при аспириновой бронхиальной астме или аллергии на АСК',
+      protocolTableType: 'non_cardioembolic',
+      ruleNumber: 3,
+      ruleTitle: 'ИГМ NIHSS ≤3, ТИА при непереносимости двойной антиагрегантной терапии (п. 3)',
+      ruleDescriptionRu: 'Таблица: Некардиоэмболический ИГМ | Пункт 3: ИГМ NIHSS ≤3, ТИА при непереносимости ДААТ',
+      protocolCitation: 'Таблица «Антитромботическая терапия при некардиоэмболическом ИГМ», п. 3',
+      daptIntoleranceHandled: true,
+      phase1: {
+        timing: 'С 1 суток до 14 суток',
+        regimen: 'АСК монотерапия в нагрузочной дозе',
+        dosing: 'АСК 300 мг/сут внутрь'
+      },
+      phase2: {
+        timing: 'С 15 суток и далее',
+        regimen: 'Монотерапия АСК или клопидогрел',
+        dosing: 'АСК 75 мг/сут ИЛИ клопидогрел 75 мг/сут пожизненно'
+      },
+      acuteFirst24h,
+      secondaryPreventionCategory: 'non_cardioembolic',
+      regimenSummaryRu: 'Некардиоэмболический подтип при непереносимости ДААТ (п. 3): АСК 300 мг/сут до 14 сут, с 15 сут — АСК 75 мг/сут или клопидогрел 75 мг/сут.'
+    };
+  }
+
+  // Handle Dissection (Special case of "Other" subtype)
   if (dominantSubtype === 'other' && data.selectedRareCauses.includes('arterial_dissection')) {
     return {
       strategy: 'antiplatelet',
       timingDay: 'С первых суток',
-      timingRationale: 'Острая фаза диссекции церебральной артерии',
+      timingRationale: 'Острая фаза диссекции церебральной артерии (п. 43.3)',
       primaryRegimen: 'ОАК (ПОАК или Варфарин МНО 2.0–3.0) ИЛИ ДААТ (Клопидогрел + АСК)',
       dosingDetails: 'Терапия на срок 3–6 месяцев под контролем ангиографии (КТА/МРА)',
       duration: '3–6 месяцев',
-      safetyNotes:
-        'Контрольная КТА/МРА через 3–6 месяцев для оценки реканализации и заживления интимы (п. 43.3)',
+      safetyNotes: 'Контрольная КТА/МРА через 3–6 месяцев для оценки заживления интимы и реканализации (п. 43.3)',
+      protocolTableType: 'non_cardioembolic',
+      ruleNumber: 1,
+      ruleTitle: 'Диссекция церебральных артерий (п. 43.3)',
+      ruleDescriptionRu: 'Протокол п. 43.3: Антитромботическая терапия при диссекции церебральных артерий',
+      protocolCitation: 'Клинический протокол МЗ РБ № 1, п. 43.3',
       acuteFirst24h,
       secondaryPreventionCategory: 'dissection',
-      regimenSummaryRu:
-        'Диссекция церебральных артерий: ОАК (ПОАК или Варфарин МНО 2.0–3.0) ИЛИ ДААТ (Клопидогрел + АСК) на срок 3–6 месяцев с последующей оценкой реканализации на КТА/МРА (п. 43.3).'
+      regimenSummaryRu: 'Диссекция церебральных артерий: ОАК ИЛИ ДААТ (Клопидогрел + АСК) на 3–6 месяцев (п. 43.3).'
     };
   }
 
-  // Non-cardioembolic (Atherothrombotic, Lacunar, Undetermined / ESUS)
-  // Check DAPT criteria (item 43.2):
-  // 1) Minor stroke (NIHSS <= 3) or high-risk TIA (ABCD2 >= 4):
-  // Clopidogrel 300 mg load then 75 mg + ASA 300 mg load then 75 mg for 21 days + PPI (pantoprazole).
-  // 2) Moderate stroke (NIHSS 4-5) or TIA with ABCD2 >= 6 or stenosis >= 30%:
-  // Ticagrelor 180 mg load then 90 mg BID + ASA 75 mg for 30 days + PPI.
-  // 3) Multivascular disease (CAD + PAD) and low bleeding risk:
-  // ASA 100 mg + Rivaroxaban 2.5 mg BID starting after 30 days (COMPASS, item 43.2).
-  // 4) Monotherapy long term: ASA 75-100 mg or Clopidogrel 75 mg (combination banned long-term).
+  // Non-cardioembolic evaluation by onset time, NIHSS, and ABCD2:
+  const isUnder24h = data.onsetTimeHours < 24;
+  const is24to72h = data.onsetTimeHours >= 24 && data.onsetTimeHours <= 72;
 
-  const isMinorStrokeOrHighRiskTIA = data.nihssScore <= 3;
-  const isModerateStrokeOrStenosis30 =
-    (data.nihssScore >= 4 && data.nihssScore <= 5) || data.targetVesselStenosisNascet >= 30;
+  // Rule 2: ИГМ <24ч, NIHSS ≤5 и ТИА высокого риска по ABCD2 ≥6 (Тикагрелор + АСК)
+  const qualifiesForRule2 =
+    isUnder24h &&
+    ((isTIA && abcd2 >= 6) ||
+      (!isTIA && data.nihssScore <= 5 && (data.nihssScore >= 4 || abcd2 >= 6 || data.targetVesselStenosisNascet >= 30)));
 
-  if (isModerateStrokeOrStenosis30 && !data.activeBleeding) {
+  if (qualifiesForRule2 && !data.activeBleeding) {
     return {
       strategy: 'antiplatelet',
-      timingDay: 'С первых суток (в первые 24 часа)',
-      timingRationale: acuteFirst24h,
-      primaryRegimen: 'Тикагрелор + Ацетилсалициловая кислота (ДААТ)',
-      dosingDetails: 'Тикагрелор нагрузочная доза 180 мг, затем 90 мг 2 раза в сутки + АСК 75–100 мг/сут.',
-      duration: '30 суток с момента дебюта симптомов',
+      timingDay: '1 сутки (в первые 24 часа)',
+      timingRationale: 'Окно < 24 часов, NIHSS ≤ 5 или ТИА высокого риска по ABCD2 ≥ 6 (п. 2)',
+      primaryRegimen: 'Тикагрелор + АСК (ДААТ с тикагрелором на 30 суток)',
+      dosingDetails:
+        '1 сутки: Тикагрелор 180 мг/сут + АСК 300 мг/сут. Со 2 суток до 30 суток: тикагрелор 90 мг 2 р/сут + АСК 75 мг/сут. С 31 суток: монотерапия АСК 75–150 мг/сут или клопидогрел 75 мг/сут.',
+      duration: '30 суток ДААТ, далее пожизненная монотерапия',
       safetyNotes:
-        'С 31-х суток — пожизненная монотерапия АСК 75–100 мг/сут или Клопидогрелом 75 мг/сут. Обязателен ИПП (пантопразол).',
-      alternativeRegimen:
-        'При непереносимости тикагрелора — ДААТ с клопидогрелом (300 мг нагрузка, далее 75 мг) + АСК 75 мг',
-      acuteFirst24h,
-      secondaryPreventionCategory: 'non_cardioembolic',
-      regimenSummaryRu:
-        'Некардиоэмболический инсульт/ТИА умеренной тяжести (NIHSS 4–5 или стеноз артерии ≥ 30%): ДААТ с тикагрелором на 30 дней (п. 43.2).',
+        'С 31 суток — монотерапия АСК 75–150 мг/сут или клопидогрел 75 мг/сут. Прием двух антиагрегантов более 30 суток запрещен! Обязателен ИПП (пантопразол).',
+      alternativeRegimen: 'При непереносимости тикагрелора — ДААТ с клопидогрелом (300 мг нагрузка, далее 75 мг) + АСК 75 мг (п. 1)',
+      protocolTableType: 'non_cardioembolic',
+      ruleNumber: 2,
+      ruleTitle: 'ИГМ <24ч, NIHSS ≤5 и ТИА высокого риска по ABCD2 ≥6 (п. 2)',
+      ruleDescriptionRu: 'Таблица: Некардиоэмболический ИГМ | Пункт 2: Тикагрелор + АСК на 30 суток',
+      protocolCitation: 'Таблица «Антитромботическая терапия при некардиоэмболическом ИГМ», п. 2',
+      phase1: {
+        timing: '1 сутки',
+        regimen: 'Тикагрелор нагрузочная доза + АСК нагрузочная доза',
+        dosing: 'Тикагрелор 180 мг однократно + АСК 300 мг однократно'
+      },
+      phase2: {
+        timing: 'Со 2 суток до 30 суток',
+        regimen: 'Тикагрелор + АСК (ДААТ)',
+        dosing: 'Тикагрелор 90 мг 2 р/сут + АСК 75 мг/сут'
+      },
+      phase3: {
+        timing: 'С 31 суток и далее',
+        regimen: 'Пожизненная монотерапия',
+        dosing: 'АСК 75–150 мг/сут ИЛИ клопидогрел 75 мг/сут'
+      },
       daptDetails: {
         drugCombination: 'Тикагрелор + Ацетилсалициловая кислота (АСК)',
-        loadingDose: 'Тикагрелор нагрузочная доза 180 мг, затем 90 мг 2 раза в сутки + АСК 75–100 мг/сут.',
+        loadingDose: 'Тикагрелор 180 мг + АСК 300 мг в 1-е сутки',
         maintenanceDuration: '30 суток с момента дебюта симптомов',
-        monotherapyAfter:
-          'С 31-х суток — пожизненная монотерапия АСК 75–100 мг/сут или Клопидогрелом 75 мг/сут (одновременный прием двух антиагрегантов более 30 суток запрещен из-за риска кровотечений!)',
+        monotherapyAfter: 'С 31 суток — монотерапия АСК 75–150 мг/сут или клопидогрел 75 мг/сут',
         ppiRecommended: true
-      }
-    };
-  }
-
-  if (isMinorStrokeOrHighRiskTIA && !data.activeBleeding) {
-    return {
-      strategy: 'antiplatelet',
-      timingDay: 'С первых суток (в первые 24 часа)',
-      timingRationale: acuteFirst24h,
-      primaryRegimen: 'Клопидогрел + Ацетилсалициловая кислота (ДААТ)',
-      dosingDetails:
-        'Клопидогрел нагрузочная доза 300 мг, затем 75 мг/сут + АСК 150–300 мг нагрузочная, затем 75 мг/сут.',
-      duration: '21 сутки с момента дебюта симптомов',
-      safetyNotes:
-        'С 22-х суток — переход на пожизненную монотерапию (Клопидогрел 75 мг/сут или АСК 75–100 мг/сут). Обязателен ИПП.',
-      alternativeRegimen: 'При непереносимости клопидогрела — монотерапия АСК 75–100 мг/сут',
+      },
       acuteFirst24h,
       secondaryPreventionCategory: 'non_cardioembolic',
-      regimenSummaryRu:
-        'Малый ишемический инсульт (NIHSS ≤ 3) / ТИА высокого риска: ДААТ с клопидогрелом на 21 день (п. 43.2).',
-      daptDetails: {
-        drugCombination: 'Клопидогрел + Ацетилсалициловая кислота (АСК)',
-        loadingDose:
-          'Клопидогрел нагрузочная доза 300 мг, затем 75 мг/сут + АСК 150–300 мг нагрузочная, затем 75 мг/сут.',
-        maintenanceDuration: '21 сутки с момента дебюта симптомов',
-        monotherapyAfter:
-          'С 22-х суток — переход на пожизненную монотерапию (Клопидогрел 75 мг/сут или АСК 75–100 мг/сут)',
-        ppiRecommended: true
-      }
+      regimenSummaryRu: 'Пункт 2: ИГМ <24ч, NIHSS ≤5 / ТИА ABCD2 ≥6: ДААТ с тикагрелором на 30 дней (1 сут: 180 мг + 300 мг, со 2 по 30 сут: 90 мг х 2р + 75 мг, с 31 сут: монотерапия 75–150 мг).'
     };
   }
 
-  // Standard non-cardioembolic monotherapy or COMPASS
+  // Rule 1: ИГМ <24ч, NIHSS ≤3 и ТИА высокого риска по ABCD2 ≥4 (Клопидогрел + АСК)
+  const qualifiesForRule1 =
+    isUnder24h &&
+    ((isTIA && abcd2 >= 4) || (!isTIA && data.nihssScore <= 3));
+
+  if (qualifiesForRule1 && !data.activeBleeding) {
+    return {
+      strategy: 'antiplatelet',
+      timingDay: '1 сутки (в первые 24 часа)',
+      timingRationale: 'Окно < 24 часов, малый инсульт NIHSS ≤ 3 или ТИА высокого риска по ABCD2 ≥ 4 (п. 1)',
+      primaryRegimen: 'Клопидогрел + АСК (ДААТ с клопидогрелом на 21 день)',
+      dosingDetails:
+        '1 сутки: клопидогрел 300 мг/сут + АСК 300 мг/сут. Со 2 суток до 21 суток: клопидогрел 75 мг/сут + АСК 75 мг/сут. С 22 суток: монотерапия АСК 75 мг/сут или клопидогрел 75 мг/сут.',
+      duration: '21 сутки ДААТ, далее пожизненная монотерапия',
+      safetyNotes:
+        'С 22 суток — переход на монотерапию АСК 75 мг/сут или клопидогрел 75 мг/сут (продление ДААТ свыше 21 дня не снижает риск, но повышает риск кровотечений). Обязателен ИПП.',
+      alternativeRegimen: 'При непереносимости клопидогрела — монотерапия АСК 75–100 мг/сут',
+      protocolTableType: 'non_cardioembolic',
+      ruleNumber: 1,
+      ruleTitle: 'ИГМ <24ч, NIHSS ≤3 и ТИА высокого риска по ABCD2 ≥4 (п. 1)',
+      ruleDescriptionRu: 'Таблица: Некардиоэмболический ИГМ | Пункт 1: Клопидогрел + АСК на 21 сутки',
+      protocolCitation: 'Таблица «Антитромботическая терапия при некардиоэмболическом ИГМ», п. 1',
+      phase1: {
+        timing: '1 сутки',
+        regimen: 'Клопидогрел нагрузочная доза + АСК нагрузочная доза',
+        dosing: 'Клопидогрел 300 мг однократно + АСК 300 мг однократно'
+      },
+      phase2: {
+        timing: 'Со 2 суток до 21 суток',
+        regimen: 'Клопидогрел + АСК (ДААТ)',
+        dosing: 'Клопидогрел 75 мг/сут + АСК 75 мг/сут'
+      },
+      phase3: {
+        timing: 'С 22 суток и далее',
+        regimen: 'Пожизненная монотерапия',
+        dosing: 'АСК 75 мг/сут ИЛИ клопидогрел 75 мг/сут'
+      },
+      daptDetails: {
+        drugCombination: 'Клопидогрел + Ацетилсалициловая кислота (АСК)',
+        loadingDose: 'Клопидогрел 300 мг + АСК 300 мг в 1-е сутки',
+        maintenanceDuration: '21 сутки с момента дебюта симптомов',
+        monotherapyAfter: 'С 22 суток — переход на монотерапию (АСК 75 мг/сут или клопидогрел 75 мг/сут)',
+        ppiRecommended: true
+      },
+      acuteFirst24h,
+      secondaryPreventionCategory: 'non_cardioembolic',
+      regimenSummaryRu: 'Пункт 1: ИГМ <24ч, NIHSS ≤3 / ТИА ABCD2 ≥4: ДААТ с клопидогрелом на 21 день (1 сут: 300 мг + 300 мг, со 2 по 21 сут: 75 мг + 75 мг, с 22 сут: монотерапия 75 мг).'
+    };
+  }
+
+  // Rule 4: ИГМ <24ч, NIHSS ≥6
+  if (isUnder24h && data.nihssScore >= 6 && !isTIA) {
+    return {
+      strategy: 'antiplatelet',
+      timingDay: '1 сутки (в первые 24 часа)',
+      timingRationale: 'Инсульт умеренной/тяжелой степени (NIHSS ≥ 6) в первые 24 часа (п. 4)',
+      primaryRegimen: 'АСК 150–300 мг/сут с 1 по 14 сутки (ИЛИ Клопидогрел 300 мг в 1 сутки, со 2 суток 75 мг/сут)',
+      dosingDetails:
+        'С 1 по 14 сутки: АСК 150–300 мг/сут; с 15 суток: АСК 75 мг/сут. ИЛИ: 1 сутки: клопидогрел 300 мг/сут; со 2 суток: клопидогрел 75 мг/сут.',
+      duration: 'Пожизненно',
+      safetyNotes: 'При NIHSS ≥ 6 двойная антиагрегантная терапия не рекомендуется из-за риска геморрагической трансформации инфаркта.',
+      alternativeRegimen: '1 сутки: клопидогрел 300 мг, со 2 суток: клопидогрел 75 мг/сут',
+      protocolTableType: 'non_cardioembolic',
+      ruleNumber: 4,
+      ruleTitle: 'ИГМ <24ч, NIHSS ≥6 (п. 4)',
+      ruleDescriptionRu: 'Таблица: Некардиоэмболический ИГМ | Пункт 4: АСК 150–300 мг или Клопидогрел 300 мг',
+      protocolCitation: 'Таблица «Антитромботическая терапия при некардиоэмболическом ИГМ», п. 4',
+      phase1: {
+        timing: 'С 1 по 14 сутки',
+        regimen: 'АСК 150–300 мг/сут (ИЛИ 1 сут Клопидогрел 300 мг, со 2 сут 75 мг)',
+        dosing: 'АСК 150–300 мг 1 раз в сутки'
+      },
+      phase2: {
+        timing: 'С 15 суток и далее',
+        regimen: 'Пожизненная монотерапия',
+        dosing: 'АСК 75 мг/сут ИЛИ клопидогрел 75 мг/сут'
+      },
+      acuteFirst24h,
+      secondaryPreventionCategory: 'non_cardioembolic',
+      regimenSummaryRu: 'Пункт 4: ИГМ <24ч, NIHSS ≥6: С 1 по 14 сутки: АСК 150–300 мг/сут, с 15 суток: АСК 75 мг/сут (или клопидогрел 300 мг с переходом на 75 мг).'
+    };
+  }
+
+  // Rule 5: ИГМ 24–72ч, NIHSS ≤5 и ТИА высокого риска по ABCD2 ≥4
+  const qualifiesForRule5 =
+    is24to72h &&
+    ((isTIA && abcd2 >= 4) || (!isTIA && data.nihssScore <= 5));
+
+  if (qualifiesForRule5 && !data.activeBleeding) {
+    return {
+      strategy: 'antiplatelet',
+      timingDay: '24–72 часа от дебюта',
+      timingRationale: 'Поступление в интервале 24–72 часа, NIHSS ≤ 5 или ТИА ABCD2 ≥ 4 (п. 5)',
+      primaryRegimen: 'Клопидогрел 75 мг/сут + АСК 75 мг/сут (без нагрузочной дозы) до 21 суток',
+      dosingDetails:
+        'До 21 суток: клопидогрел 75 мг/сут + АСК 75 мг/сут (нагрузочные дозы 300 мг НЕ применяются!). С 22 суток: монотерапия АСК 75 мг/сут или клопидогрел 75 мг/сут.',
+      duration: 'До 21 суток ДААТ, далее пожизненная монотерапия',
+      safetyNotes: 'Нагрузочная доза 300 мг после 24 часов не применяется. С 22 суток — переход на монотерапию.',
+      alternativeRegimen: 'Монотерапия АСК 75–100 мг/сут при непереносимости клопидогрела',
+      protocolTableType: 'non_cardioembolic',
+      ruleNumber: 5,
+      ruleTitle: 'ИГМ 24–72ч, NIHSS ≤5 и ТИА высокого риска по ABCD2 ≥4 (п. 5)',
+      ruleDescriptionRu: 'Таблица: Некардиоэмболический ИГМ | Пункт 5: ДААТ без нагрузочной дозы до 21 суток',
+      protocolCitation: 'Таблица «Антитромботическая терапия при некардиоэмболическом ИГМ», п. 5',
+      phase1: {
+        timing: 'До 21 суток',
+        regimen: 'Клопидогрел 75 мг/сут + АСК 75 мг/сут',
+        dosing: 'Клопидогрел 75 мг/сут + АСК 75 мг/сут (без нагрузочной дозы)'
+      },
+      phase2: {
+        timing: 'С 22 суток и далее',
+        regimen: 'Пожизненная монотерапия',
+        dosing: 'АСК 75 мг/сут ИЛИ клопидогрел 75 мг/сут'
+      },
+      acuteFirst24h,
+      secondaryPreventionCategory: 'non_cardioembolic',
+      regimenSummaryRu: 'Пункт 5: ИГМ 24–72ч, NIHSS ≤5 / ТИА ABCD2 ≥4: До 21 суток — клопидогрел 75 мг + АСК 75 мг/сут без нагрузки, с 22 суток — монотерапия 75 мг.'
+    };
+  }
+
+  // Rule 6: ИГМ не соответствует 5 пункту (>72ч, NIHSS >5 при поступлении >24ч, стандартная монотерапия)
   const hasBledResult = calculateHASBLED(data);
-  let regimenSummaryRu =
-    'Некардиоэмболический инсульт (NIHSS > 5): монотерапия АСК 75–100 мг/сут или Клопидогрелом 75 мг/сут (п. 43.2).';
+  let primaryRegimen = 'Монотерапия: АСК 75 мг/сут ИЛИ Клопидогрел 75 мг/сут';
+  let dosingDetails = 'АСК 75–100 мг 1 раз в сутки утром после еды ИЛИ Клопидогрел 75 мг 1 раз в сутки';
+  let compassText = '';
+
   if (data.multivascularDisease && hasBledResult.compassRegimenAllowed) {
-    regimenSummaryRu +=
-      ' При мультифокальном атеросклерозе (ИБС + ЗПА) и низком риске кровотечения через 30 дней показана терапия COMPASS: АСК 100 мг/сут + Ривароксабан 2.5 мг 2 р/сут (п. 43.2).';
+    primaryRegimen = 'АСК 100 мг/сут + Ривароксабан 2.5 мг 2 р/сут (режим COMPASS с 30 суток)';
+    dosingDetails = 'В первые 30 дней: АСК 100 мг/сут. С 30 суток: добавление Ривароксабана 2.5 мг 2 раза в сутки (п. 43.2).';
+    compassText = ' При мультифокальном атеросклерозе (ИБС + ЗПА) с 30 суток показан режим COMPASS (АСК 100 мг + Ривароксабан 2.5 мг 2 р/с).';
   }
 
   return {
     strategy: 'antiplatelet',
-    timingDay: 'С первых суток (в первые 24 часа)',
-    timingRationale: acuteFirst24h,
-    primaryRegimen:
-      data.multivascularDisease && hasBledResult.compassRegimenAllowed
-        ? 'АСК 100 мг/сут + Ривароксабан 2.5 мг 2 р/сут (режим COMPASS через 30 дней)'
-        : 'Монотерапия: АСК 75–100 мг/сут ИЛИ Клопидогрел 75 мг/сут',
-    dosingDetails:
-      data.multivascularDisease && hasBledResult.compassRegimenAllowed
-        ? 'В первые 30 дней — АСК 100 мг/сут, затем добавление Ривароксабана 2.5 мг 2 раза в сутки'
-        : 'АСК 75–100 мг 1 раз в сутки утром после еды ИЛИ Клопидогрел 75 мг 1 раз в сутки',
+    timingDay: 'С момента оценки',
+    timingRationale: 'Инсульт не соответствует критериям пунктов 1–5 (поступление > 72ч или выраженный дефицит > 24ч) (п. 6)',
+    primaryRegimen,
+    dosingDetails,
     duration: 'Пожизненно',
-    safetyNotes:
-      'Контроль гемодинамики, исключение источников кровотечения. Запрещен одновременный прием двух антиагрегантов без специальных показаний.',
+    safetyNotes: 'Контроль артериального давления, исключение кровотечений. Двойная антиагрегантная терапия не показана.',
     alternativeRegimen: 'Клопидогрел 75 мг/сут при аспириновой язве / непереносимости АСК',
+    protocolTableType: 'non_cardioembolic',
+    ruleNumber: 6,
+    ruleTitle: 'ИГМ не соответствует 5 пункту (п. 6)',
+    ruleDescriptionRu: 'Таблица: Некардиоэмболический ИГМ | Пункт 6: Монотерапия АСК 75 мг или клопидогрел 75 мг',
+    protocolCitation: 'Таблица «Антитромботическая терапия при некардиоэмболическом ИГМ», п. 6',
+    phase1: {
+      timing: 'Постоянно (пожизненно)',
+      regimen: 'Монотерапия АСК или клопидогрел',
+      dosing: 'АСК 75–100 мг/сут ИЛИ клопидогрел 75 мг/сут'
+    },
     acuteFirst24h,
     secondaryPreventionCategory: 'non_cardioembolic',
-    regimenSummaryRu
+    regimenSummaryRu: `Пункт 6: Монотерапия АСК 75 мг/сут или клопидогрел 75 мг/сут.${compassText}`
   };
 }
 

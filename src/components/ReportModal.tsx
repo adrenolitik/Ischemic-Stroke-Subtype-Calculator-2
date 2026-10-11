@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CalculationResult, PatientData } from '../types';
-import { X, Printer, Copy, Check, FileText, Download, Share2, ArrowLeft } from 'lucide-react';
+import { X, Printer, Copy, Check, FileText, Download, Share2, ArrowLeft, FileDown, Loader2 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -16,6 +18,9 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   patientData
 }) => {
   const [copied, setCopied] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const reportPaperRef = useRef<HTMLDivElement>(null);
 
   // Close on Escape key
   useEffect(() => {
@@ -69,12 +74,14 @@ ${(result.toastSubtypes || []).map((s) => `     - ${s.key.toUpperCase()}: ${s.sc
      Окно: ${result.reperfusion?.evtWindowStatus || ''}
      Обоснование: ${result.reperfusion?.evtRationale || ''}
 
-4. ПЕРСОНАЛИЗИРОВАННЫЙ АНТИТРОМБОТИЧЕСКИЙ ПЛАН (п. 43, Приложения 14 и 15):
-   • Стратегия: ${result.antithromboticPlan?.strategy || ''}
-   • Срок старта / возобновления: ${result.antithromboticPlan?.timingDay || ''} (${result.antithromboticPlan?.timingRationale || ''})
-   • Препарат и режим: ${result.antithromboticPlan?.primaryRegimen || ''}
+4. ВТОРИЧНАЯ ПРОФИЛАКТИКА ТРОМБОЗА (Протокол МЗ РБ № 1 от 05.01.2026):
+   • Нормативное основание: ${result.antithromboticPlan?.protocolCitation || ''} (${result.antithromboticPlan?.ruleTitle || ''})
+   • Стратегия: ${result.antithromboticPlan?.strategy === 'OAC' ? 'Пероральная антикоагулянтная терапия (ОАК)' : 'Антиагрегантная терапия'}
+   • Срок старта / возобновления: ${result.antithromboticPlan?.timingDay || ''}
+   • Обоснование: ${result.antithromboticPlan?.timingRationale || ''}
+   ${result.antithromboticPlan?.preOACBridge ? `• Мост-терапия: ${result.antithromboticPlan.preOACBridge}\n   ` : ''}• Препарат и режим: ${result.antithromboticPlan?.primaryRegimen || ''}
    • Дозирование: ${result.antithromboticPlan?.dosingDetails || ''}
-   • Длительность: ${result.antithromboticPlan?.duration || ''}
+   ${result.antithromboticPlan?.phase1 ? `• Фаза 1: ${result.antithromboticPlan.phase1.timing} — ${result.antithromboticPlan.phase1.dosing}\n   ` : ''}${result.antithromboticPlan?.phase2 ? `• Фаза 2: ${result.antithromboticPlan.phase2.timing} — ${result.antithromboticPlan.phase2.dosing}\n   ` : ''}${result.antithromboticPlan?.phase3 ? `• Фаза 3: ${result.antithromboticPlan.phase3.timing} — ${result.antithromboticPlan.phase3.dosing}\n   ` : ''}• Длительность: ${result.antithromboticPlan?.duration || ''}
    • Безопасность: ${result.antithromboticPlan?.safetyNotes || ''}
 
 5. СТРАТИФИКАЦИЯ РИСКОВ:
@@ -163,6 +170,117 @@ ${result.recommendations?.surgicalOrInterventional ? `   • Интервенц�
     }
   };
 
+  const handleExportPdf = async () => {
+    if (!reportPaperRef.current || isExportingPdf) return;
+    setIsExportingPdf(true);
+    setPdfError(null);
+
+    try {
+      const reportElement = reportPaperRef.current;
+
+      // Render the report element using html2canvas with 2x scale for sharp typography
+      const canvas = await html2canvas(reportElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: 820,
+        onclone: (clonedDoc) => {
+          const clonedEl = clonedDoc.querySelector('[data-report-paper="true"]') as HTMLElement | null;
+          if (clonedEl) {
+            clonedEl.style.backgroundColor = '#ffffff';
+            clonedEl.style.color = '#0f172a';
+            clonedEl.style.width = '794px'; // Standard A4 width at 96 DPI
+            clonedEl.style.padding = '28px 36px';
+            clonedEl.style.boxSizing = 'border-box';
+
+            // Clean up dark classes in cloned element to make paper strictly print-white
+            const elements = clonedEl.querySelectorAll('*');
+            elements.forEach((node) => {
+              const el = node as HTMLElement;
+              el.classList.remove('dark');
+              if (el.classList.contains('text-slate-100') || el.classList.contains('dark:text-white')) {
+                el.style.color = '#0f172a';
+              }
+            });
+          }
+        }
+      });
+
+      // Standard A4 portrait in millimeters
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+      });
+
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 10; // 10mm margins
+      const contentWidth = pageWidth - margin * 2; // 190mm
+      const maxPageContentHeight = pageHeight - margin * 2; // 277mm
+      const totalImgHeightMm = (canvas.height * contentWidth) / canvas.width;
+
+      if (totalImgHeightMm <= maxPageContentHeight) {
+        // Single page document
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, totalImgHeightMm, undefined, 'FAST');
+      } else {
+        // Multi-page document: slice canvas cleanly by page height
+        const pxPerPage = (canvas.width * maxPageContentHeight) / contentWidth;
+        let renderedPx = 0;
+        let pageIndex = 0;
+
+        while (renderedPx < canvas.height) {
+          const slicePxHeight = Math.min(pxPerPage, canvas.height - renderedPx);
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = slicePxHeight;
+          const ctx = pageCanvas.getContext('2d');
+          if (ctx) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+            ctx.drawImage(
+              canvas,
+              0,
+              renderedPx,
+              canvas.width,
+              slicePxHeight,
+              0,
+              0,
+              canvas.width,
+              slicePxHeight
+            );
+            const sliceData = pageCanvas.toDataURL('image/png');
+            const sliceHeightMm = (slicePxHeight * contentWidth) / canvas.width;
+
+            if (pageIndex > 0) {
+              pdf.addPage();
+            }
+            pdf.addImage(sliceData, 'PNG', margin, margin, contentWidth, sliceHeightMm, undefined, 'FAST');
+            pageIndex++;
+          }
+          renderedPx += pxPerPage;
+        }
+      }
+
+      const safeName = patientData.patientName
+        ? patientData.patientName.trim().replace(/[^a-zA-Zа-яА-Я0-9_]/g, '_')
+        : 'Пациент';
+      const dateStamp = new Date().toISOString().slice(0, 10);
+      const fileName = `Заключение_инсульт_${safeName}_${dateStamp}.pdf`;
+
+      pdf.save(fileName);
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      setPdfError('Ошибка при создании PDF. Воспользуйтесь кнопкой «Печать».');
+      setTimeout(() => setPdfError(null), 5000);
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   const canShare = typeof navigator !== 'undefined' && !!navigator.share;
 
   return (
@@ -202,13 +320,13 @@ ${result.recommendations?.surgicalOrInterventional ? `   • Интервенц�
             </div>
           </div>
 
-          <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">
+          <div className="flex items-center space-x-1 sm:space-x-1.5 shrink-0">
             {canShare && (
               <button
                 id="share-report-btn"
                 type="button"
                 onClick={handleShare}
-                className="px-2.5 py-1.5 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 rounded-lg hover:bg-purple-100 transition flex items-center space-x-1"
+                className="px-2 sm:px-2.5 py-1.5 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 rounded-lg hover:bg-purple-100 transition flex items-center space-x-1"
                 title="Поделиться через мессенджер или отправить"
               >
                 <Share2 className="w-3.5 h-3.5" />
@@ -220,7 +338,7 @@ ${result.recommendations?.surgicalOrInterventional ? `   • Интервенц�
               id="copy-report-text-btn"
               type="button"
               onClick={handleCopy}
-              className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-100 transition flex items-center space-x-1"
+              className="px-2 sm:px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-100 transition flex items-center space-x-1"
               title="Скопировать текст в буфер обмена"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -231,18 +349,35 @@ ${result.recommendations?.surgicalOrInterventional ? `   • Интервенц�
               id="download-txt-report-btn"
               type="button"
               onClick={handleDownloadTxt}
-              className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-100 transition flex items-center space-x-1"
+              className="px-2 sm:px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-100 transition flex items-center space-x-1"
               title="Скачать файл протокола (.txt)"
             >
               <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Скачать</span>
+              <span className="hidden sm:inline">.txt</span>
+            </button>
+
+            {/* Direct PDF Export Button in Header */}
+            <button
+              id="export-pdf-report-btn"
+              type="button"
+              onClick={handleExportPdf}
+              disabled={isExportingPdf}
+              className="px-2.5 sm:px-3 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 disabled:bg-red-400 rounded-lg shadow-xs transition flex items-center space-x-1 shrink-0 cursor-pointer"
+              title="Экспортировать врачебное заключение в PDF"
+            >
+              {isExportingPdf ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <FileDown className="w-3.5 h-3.5" />
+              )}
+              <span>{isExportingPdf ? 'PDF...' : 'PDF'}</span>
             </button>
 
             <button
               id="print-report-btn"
               type="button"
               onClick={handlePrint}
-              className="px-3 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition flex items-center space-x-1 shrink-0"
+              className="px-2.5 sm:px-3 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition flex items-center space-x-1 shrink-0"
               title="Печать заключения"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -253,7 +388,7 @@ ${result.recommendations?.surgicalOrInterventional ? `   • Интервенц�
               id="close-report-modal-btn"
               type="button"
               onClick={onClose}
-              className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 transition min-w-[36px] min-h-[36px] flex items-center justify-center"
+              className="p-1.5 sm:p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 transition min-w-[32px] min-h-[32px] flex items-center justify-center"
               aria-label="Закрыть"
               title="Закрыть заключение"
             >
@@ -262,8 +397,26 @@ ${result.recommendations?.surgicalOrInterventional ? `   • Интервенц�
           </div>
         </div>
 
+        {/* Error notification if PDF export fails */}
+        {pdfError && (
+          <div className="mx-4 mt-2 p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs rounded-xl flex items-center justify-between">
+            <span>{pdfError}</span>
+            <button
+              type="button"
+              onClick={() => setPdfError(null)}
+              className="text-rose-600 hover:text-rose-800 font-bold ml-2 text-sm"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Printable Paper Canvas */}
-        <div className="p-4 sm:p-7 overflow-y-auto space-y-4 font-sans text-slate-900 dark:text-slate-100 print:text-black print:bg-white text-xs sm:text-sm flex-1">
+        <div
+          ref={reportPaperRef}
+          data-report-paper="true"
+          className="p-4 sm:p-7 overflow-y-auto space-y-4 font-sans text-slate-900 dark:text-slate-100 print:text-black print:bg-white text-xs sm:text-sm flex-1 bg-white dark:bg-slate-900"
+        >
           
           <div className="text-center border-b border-slate-200 pb-3">
             <h1 className="text-sm sm:text-base md:text-lg font-bold uppercase tracking-wide">
@@ -350,15 +503,33 @@ ${result.recommendations?.surgicalOrInterventional ? `   • Интервенц�
             </div>
           </div>
 
-          {/* 3. Antithrombotic */}
+          {/* 3. Antithrombotic Secondary Prevention */}
           <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-700">
             <div className="font-bold text-xs uppercase tracking-wider text-purple-700 dark:text-purple-400">
-              3. Персонализированный антитромботический план (п. 43, Прил. 14–15):
+              3. Вторичная профилактика тромбоза (Протокол МЗ РБ № 1):
             </div>
-            <div className="space-y-1 text-xs text-slate-700 dark:text-slate-300">
+            <div className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
+              <p><strong>• Нормативное основание:</strong> {result.antithromboticPlan?.protocolCitation}: {result.antithromboticPlan?.ruleTitle}</p>
               <p><strong>• Срок старта:</strong> {result.antithromboticPlan?.timingDay} ({result.antithromboticPlan?.timingRationale})</p>
-              <p><strong>• Режим:</strong> {result.antithromboticPlan?.primaryRegimen}</p>
+              {result.antithromboticPlan?.preOACBridge && (
+                <p className="text-amber-800 dark:text-amber-300 font-semibold">
+                  <strong>• Мост-терапия:</strong> {result.antithromboticPlan.preOACBridge}
+                  {result.antithromboticPlan.heparinBridge && ` (${result.antithromboticPlan.heparinBridge})`}
+                </p>
+              )}
+              <p><strong>• Основной препарат и режим:</strong> {result.antithromboticPlan?.primaryRegimen}</p>
               <p><strong>• Дозирование:</strong> {result.antithromboticPlan?.dosingDetails}</p>
+              {result.antithromboticPlan?.phase1 && (
+                <div className="pl-3 border-l-2 border-purple-400 dark:border-purple-600 text-[11px] space-y-0.5 my-1 bg-purple-50/40 dark:bg-purple-950/20 p-2 rounded">
+                  <div><strong>1 этап (острый):</strong> {result.antithromboticPlan.phase1.timing} — {result.antithromboticPlan.phase1.dosing}</div>
+                  {result.antithromboticPlan.phase2 && (
+                    <div><strong>2 этап (ранний):</strong> {result.antithromboticPlan.phase2.timing} — {result.antithromboticPlan.phase2.dosing}</div>
+                  )}
+                  {result.antithromboticPlan.phase3 && (
+                    <div><strong>3 этап (долговременный):</strong> {result.antithromboticPlan.phase3.timing} — {result.antithromboticPlan.phase3.dosing}</div>
+                  )}
+                </div>
+              )}
               <p><strong>• Длительность:</strong> {result.antithromboticPlan?.duration}</p>
               <p><strong>• Безопасность:</strong> {result.antithromboticPlan?.safetyNotes}</p>
             </div>
@@ -415,18 +586,39 @@ ${result.recommendations?.surgicalOrInterventional ? `   • Интервенц�
             )}
 
             <button
+              id="download-txt-report-bottom-btn"
               type="button"
               onClick={handleDownloadTxt}
               className="px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-100 transition min-h-[40px] flex items-center space-x-1.5"
+              title="Скачать заключение в текстовом формате (.txt)"
             >
               <Download className="w-4 h-4" />
-              <span className="hidden xs:inline">Скачать</span>
+              <span className="hidden xs:inline">.txt</span>
+            </button>
+
+            {/* Direct PDF Export Button in Bottom Action Bar */}
+            <button
+              id="export-pdf-report-bottom-btn"
+              type="button"
+              onClick={handleExportPdf}
+              disabled={isExportingPdf}
+              className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 disabled:bg-red-400 rounded-xl shadow-xs transition min-h-[40px] flex items-center space-x-1.5 cursor-pointer"
+              title="Экспортировать врачебное заключение в PDF файл"
+            >
+              {isExportingPdf ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4" />
+              )}
+              <span>{isExportingPdf ? 'Формирование PDF...' : 'Экспорт в PDF'}</span>
             </button>
 
             <button
+              id="print-report-bottom-btn"
               type="button"
               onClick={handlePrint}
               className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition min-h-[40px] flex items-center space-x-1.5"
+              title="Печать заключения"
             >
               <Printer className="w-4 h-4" />
               <span>Печать</span>
